@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F4F6FB">
+<title>旅账 · TripLedger</title>
+<style>
+/* ============ 设计令牌（浅色） ============ */
+:root{
+  --bg:#F4F6FB;
+  --card:#FFFFFF;
+  --stroke:rgba(18,32,64,.09);
+  --stroke-hi:rgba(18,32,64,.16);
+  --blue:#2E6BFF;
+  --cyan:#0096D6;
+  --grad:linear-gradient(135deg,#2E6BFF 0%,#00A8E8 100%);
+  --green:#1FA84A;
+  --red:#E5484D;
+  --t1:#18223A;            /* 主文字 */
+  --t2:#5C6678;            /* 次文字 */
+  --t3:#98A1B3;            /* 弱文字 */
+  --r-lg:20px; --r-md:16px; --r-sm:12px;
+  --shadow:0 2px 10px rgba(18,32,64,.06),0 10px 28px rgba(18,32,64,.06);
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Helvetica Neue",sans-serif;
+  background:var(--bg);color:var(--t1);
+  min-height:100vh;min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  touch-action:manipulation;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ============ 顶栏 / 总额 ============ */
+#hero{
+  position:relative;z-index:1;
+  padding:calc(var(--sat) + 18px) 16px 14px;
+  background:var(--card);
+  border-bottom:1px solid var(--stroke);
+}
+/* 顶栏内容与下方主区同宽对齐（最大 640 - 两侧 16 padding） */
+#heroRow,#curChips,#viewTabs{max-width:608px;margin-left:auto;margin-right:auto}
+#heroRow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#tripName{
+  background:none;border:none;outline:none;color:var(--t3);
+  font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  width:100%;padding:2px 0;
+}
+#tripName:focus{color:var(--blue)}
+#grandTotal{
+  font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1.08;margin-top:4px;
+  color:var(--t1);
+}
+#grandTotal small{font-size:20px;font-weight:600;margin-right:2px;color:var(--t2)}
+#curChips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cur-chip{
+  display:flex;align-items:baseline;gap:5px;
+  padding:5px 11px;border-radius:999px;
+  background:#EEF2FA;border:1px solid var(--stroke);
+  font-size:12px;color:var(--t2);
+}
+.cur-chip b{color:var(--t1);font-size:13px}
+#heroBtns{display:flex;gap:8px;flex:none}
+#settingsBtn,#fab{
+  flex:none;width:40px;height:40px;border-radius:13px;cursor:pointer;
+  background:#EEF2FA;border:1px solid var(--stroke);
+  font-size:17px;display:grid;place-items:center;
+}
+#fab{
+  background:var(--grad);border:none;color:#fff;font-size:24px;font-weight:400;
+  box-shadow:0 4px 14px rgba(46,107,255,.35),inset 0 1px 0 rgba(255,255,255,.3);
+}
+#settingsBtn:active,#fab:active{transform:scale(.92)}
+
+/* ============ 主区 ============ */
+main{position:relative;z-index:1;padding:4px 16px calc(40px + var(--sab));max-width:640px;margin:0 auto}
+.view{display:none;animation:viewIn .28s cubic-bezier(.32,.72,.35,1)}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.sec-title{
+  font-size:13px;font-weight:600;color:var(--t3);letter-spacing:.1em;
+  margin:22px 6px 10px;text-transform:uppercase;
+}
+
+/* ============ 卡片 ============ */
+.card{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+}
+
+/* ============ 明细列表 ============ */
+.exp-card{
+  display:flex;align-items:center;gap:13px;
+  padding:13px 15px;margin-bottom:10px;
+  border-radius:var(--r-md);
+  background:var(--card);border:1px solid var(--stroke);
+  box-shadow:0 1px 6px rgba(18,32,64,.05);
+  transition:transform .15s ease;
+}
+.exp-card:active{transform:scale(.975)}
+.exp-ico{
+  width:42px;height:42px;flex:none;border-radius:13px;
+  display:grid;place-items:center;font-size:19px;
+  background:#EDF3FF;border:1px solid rgba(46,107,255,.18);
+}
+.exp-mid{flex:1;min-width:0}
+.exp-title{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-sub{font-size:12px;color:var(--t2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-amt{text-align:right;flex:none}
+.exp-amt .a{font-size:16px;font-weight:700}
+.exp-amt .c{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* 多选模式 */
+.title-row{display:flex;align-items:center;justify-content:space-between}
+.title-row button{
+  padding:4px 13px;border-radius:999px;cursor:pointer;font-family:inherit;
+  border:1px solid var(--stroke-hi);background:#fff;color:var(--t2);
+  font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;
+}
+.title-row button.on{background:rgba(46,107,255,.1);border-color:var(--blue);color:var(--blue)}
+.exp-card .check{
+  display:none;width:22px;height:22px;flex:none;border-radius:50%;
+  border:2px solid #C9D2E2;background:#fff;
+}
+body.selecting .exp-card .check{display:grid;place-items:center}
+.exp-card.sel{border-color:var(--blue);background:#F2F7FF}
+.exp-card.sel .check{border-color:var(--blue);background:var(--blue)}
+.exp-card.sel .check::after{content:"✓";color:#fff;font-size:13px;font-weight:700}
+.exp-card.done{opacity:.48}
+.exp-card.done .a{text-decoration:line-through}
+#selBar{
+  position:fixed;left:50%;bottom:calc(var(--sab) + 16px);z-index:45;
+  transform:translate(-50%,90px);
+  display:flex;align-items:center;gap:10px;
+  padding:10px 10px 10px 18px;border-radius:999px;
+  background:rgba(255,255,255,.96);border:1px solid var(--stroke);
+  box-shadow:0 10px 30px rgba(18,32,64,.2);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  transition:transform .3s cubic-bezier(.32,.72,.35,1);
+  white-space:nowrap;max-width:calc(100vw - 24px);
+}
+#selBar.open{transform:translate(-50%,0)}
+#selInfo{font-size:13px;font-weight:600}
+#selBar .btn-primary,#selBar .btn-ghost{padding:9px 16px;font-size:13px}
+
+/* ============ 结算区 ============ */
+/* 点对点结算：一人一张卡片 */
+.pair-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pcard{
+  padding:14px 15px;border-radius:var(--r-md);cursor:pointer;
+  background:var(--card);border:1px solid var(--stroke);
+  box-shadow:0 1px 6px rgba(18,32,64,.05);
+  transition:transform .15s ease;
+}
+.pcard:active{transform:scale(.96)}
+.pcard-name{font-size:15px;font-weight:700}
+.pcard-net{font-size:13px;font-weight:700;margin-top:5px}
+.pcard-net.neg{color:var(--red)}
+.pcard-net.pos{color:var(--green)}
+.pcard-net.zero{color:var(--t3);font-weight:500}
+.pcard-hint{font-size:11px;color:var(--t3);margin-top:3px}
+
+/* 个人往来弹窗（居中） */
+#pairMask{
+  position:fixed;inset:0;z-index:52;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#pairMask.open{opacity:1;pointer-events:auto}
+#pairSheet{
+  position:fixed;left:50%;top:50%;z-index:53;
+  width:min(420px, calc(100vw - 32px));
+  max-height:76dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border-radius:24px;background:#FBFCFE;
+  border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.28);
+  padding:20px 20px calc(20px + var(--sab));
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.96);
+  transition:transform .32s cubic-bezier(.32,.72,.35,1),opacity .28s;
+}
+#pairSheet.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#pairSheetTitle{font-size:18px;font-weight:700;margin-bottom:4px}
+#pairSheetSub{font-size:12px;color:var(--t3);margin-bottom:12px}
+.prow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 15px;margin-bottom:8px;border-radius:var(--r-md);
+  background:var(--card);border:1px solid var(--stroke);
+}
+.prow .who{font-size:14px;font-weight:600}
+.prow .amt{font-size:15px;font-weight:700}
+.prow .amt.neg{color:var(--red)}
+.prow .amt.pos{color:var(--green)}
+.prow.total{background:#EEF2FA;border-style:dashed}
+.prow.empty{justify-content:center;color:var(--t3);font-size:13px}
+.prow.hist{opacity:.5}
+.prow-sep{font-size:12px;color:var(--t3);margin:14px 2px 8px;font-weight:600}
+
+/* 成员名称 / 通用确认 弹窗（居中，统一风格） */
+#nameMask,#cfmMask{
+  position:fixed;inset:0;z-index:60;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#nameMask.open,#cfmMask.open{opacity:1;pointer-events:auto}
+#nameDlg,#cfmDlg{
+  position:fixed;left:50%;top:50%;z-index:61;
+  width:min(340px, calc(100vw - 48px));
+  border-radius:20px;background:#FBFCFE;
+  border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.3);
+  padding:20px;
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.95);
+  transition:transform .26s cubic-bezier(.32,.72,.35,1),opacity .22s;
+}
+#cfmDlg{z-index:63}
+#cfmMask{z-index:62}
+#nameDlg.open,#cfmDlg.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#nameTitle,#cfmTitle{font-size:16px;font-weight:700;margin-bottom:14px}
+#cfmMsg{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:2px;word-break:break-all}
+#nameDlg .sheet-foot,#cfmDlg .sheet-foot{margin-top:16px}
+
+/* 转账方案卡 */
+.tx-card{
+  display:flex;align-items:center;gap:12px;
+  padding:15px 16px;margin-bottom:10px;border-radius:var(--r-md);
+  background:linear-gradient(120deg,#EEF4FF,#F2FAFF);
+  border:1px solid rgba(46,107,255,.22);
+  box-shadow:0 2px 10px rgba(46,107,255,.08);
+  animation:txIn .4s cubic-bezier(.32,.72,.35,1) backwards;
+}
+@keyframes txIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.tx-who{font-size:15px;font-weight:700;min-width:52px;text-align:center}
+.tx-arrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.tx-amt{font-size:17px;font-weight:800;color:var(--blue)}
+.tx-line{width:100%;height:2px;border-radius:1px;position:relative;overflow:hidden;background:#DCE4F2}
+.tx-line::after{content:"";position:absolute;top:0;left:0;height:100%;width:40%;
+  background:var(--grad);border-radius:1px;animation:flow 1.6s linear infinite}
+@keyframes flow{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+.settled-badge{
+  text-align:center;padding:22px 20px;font-size:14px;color:var(--green);font-weight:600;
+}
+
+/* 成员 chips */
+.member-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.mchip{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;
+  background:#EEF2FA;border:1px solid var(--stroke);color:var(--t1);
+}
+.mchip .edit{cursor:pointer}
+.mchip .del{color:var(--t3);font-size:16px;line-height:1;padding:0 0 1px 2px;cursor:pointer}
+#addMemberBtn{
+  padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;cursor:pointer;
+  border:1px dashed rgba(46,107,255,.45);color:var(--blue);background:rgba(46,107,255,.05);
+}
+
+/* ============ 数据页 ============ */
+.rate-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #F0F2F7}
+.rate-row:last-child{border-bottom:none}
+.rate-row .lab{font-size:15px;font-weight:600}
+.rate-row .lab span{color:var(--t3);font-size:12px;font-weight:400;margin-left:6px}
+.rate-row input{
+  width:100px;text-align:right;background:#F4F6FB;
+  border:1px solid var(--stroke);border-radius:10px;color:var(--t1);
+  font-size:15px;font-weight:700;padding:7px 10px;outline:none;font-family:inherit;
+}
+.rate-row input:focus{border-color:var(--blue)}
+.io-btn{
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:15px;margin-bottom:10px;border-radius:var(--r-md);text-align:left;
+  background:var(--card);border:1px solid var(--stroke);color:var(--t1);
+  box-shadow:0 1px 6px rgba(18,32,64,.05);
+  font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;
+  transition:transform .15s ease;
+}
+.io-btn:active{transform:scale(.975)}
+.io-btn .ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex:none;
+  background:#EDF3FF;border:1px solid rgba(46,107,255,.18)}
+.io-btn small{display:block;font-size:12px;color:var(--t2);font-weight:400;margin-top:2px}
+.io-btn.danger{border-color:rgba(229,72,77,.3)}
+.io-btn.danger .ico{background:#FDECEC;border-color:rgba(229,72,77,.25)}
+.io-btn.danger .lab{color:var(--red)}
+
+/* ============ 空状态 ============ */
+.empty{text-align:center;padding:56px 30px;color:var(--t3)}
+.empty .big{font-size:44px;margin-bottom:12px}
+.empty p{font-size:14px;line-height:1.7}
+
+/* ============ 悬浮记一笔按钮（已移至顶部，样式见 #heroBtns） ============ */
+
+/* ============ 记账弹窗（居中） ============ */
+#sheetMask{
+  position:fixed;inset:0;z-index:50;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#sheetMask.open{opacity:1;pointer-events:auto}
+#sheet{
+  position:fixed;left:50%;top:50%;z-index:51;
+  width:min(480px, calc(100vw - 32px));
+  max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border-radius:24px;
+  background:#FBFCFE;
+  border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.28);
+  padding:20px 20px calc(20px + var(--sab));
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.96);
+  transition:transform .32s cubic-bezier(.32,.72,.35,1),opacity .28s;
+}
+#sheet.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#sheetTitle{font-size:18px;font-weight:700;margin-bottom:14px}
+.f-lab{font-size:12px;font-weight:600;color:var(--t3);letter-spacing:.08em;margin:15px 2px 8px}
+.f-input,select.f-input{
+  width:100%;padding:13px 14px;border-radius:var(--r-sm);
+  background:#FFFFFF;border:1px solid var(--stroke-hi);
+  color:var(--t1);font-size:16px;font-family:inherit;outline:none;
+  transition:border-color .2s;
+}
+.f-input:focus{border-color:var(--blue)}
+/* 数字输入框：去掉右侧增减按钮，纯输入 */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.f-input[readonly]{background:#F4F6FB;color:var(--t2);border-style:dashed}
+select.f-input{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235C6678' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:36px;
+}
+.amt-row{display:flex;gap:10px}
+.amt-row .f-input{flex:1;font-size:22px;font-weight:700;min-width:0}
+.amt-row select.f-input{flex:none;width:118px;font-size:15px;font-weight:700}
+.cny-wrap{display:flex;align-items:center;gap:10px}
+.cny-wrap .pre{flex:none;font-size:14px;color:var(--t2);font-weight:600}
+.cny-hint{font-size:11px;color:var(--t3);margin-top:6px}
+.chip-set{display:flex;flex-wrap:wrap;gap:8px}
+.pick{
+  padding:9px 15px;border-radius:999px;font-size:14px;font-weight:600;cursor:pointer;
+  background:#F4F6FB;border:1px solid var(--stroke);color:var(--t2);
+  transition:all .16s;font-family:inherit;
+}
+.pick.on{background:rgba(46,107,255,.1);border-color:var(--blue);color:var(--blue)}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cat-cell{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:11px 4px;border-radius:var(--r-sm);cursor:pointer;
+  background:#F4F6FB;border:1px solid transparent;
+  font-size:11px;color:var(--t2);transition:all .16s;font-family:inherit;
+}
+.cat-cell .ci{font-size:21px}
+.cat-cell.on{border-color:var(--blue);background:rgba(46,107,255,.09);color:var(--blue)}
+/* 弹窗底部按钮行：右下角 */
+.sheet-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+
+/* ============ 统一按钮体系 ============ */
+.btn{
+  padding:11px 20px;border-radius:12px;cursor:pointer;font-family:inherit;
+  font-size:14px;font-weight:600;border:1px solid transparent;
+  transition:transform .12s ease;
+}
+.btn:active{transform:scale(.95)}
+.btn-primary{
+  background:var(--grad);color:#fff;border:none;
+  box-shadow:0 4px 14px rgba(46,107,255,.3),inset 0 1px 0 rgba(255,255,255,.25);
+}
+.btn-ghost{background:#F4F6FB;border-color:var(--stroke);color:var(--t2)}
+.btn-danger{background:#FDECEC;border-color:rgba(229,72,77,.25);color:var(--red)}
+
+/* 身份选择弹窗（居中，与名称/确认弹窗同风格） */
+#idMask{
+  position:fixed;inset:0;z-index:64;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#idMask.open{opacity:1;pointer-events:auto}
+#idDlg{
+  position:fixed;left:50%;top:50%;z-index:65;
+  width:min(340px, calc(100vw - 48px));
+  border-radius:20px;background:#FBFCFE;
+  border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.3);
+  padding:20px;
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.95);
+  transition:transform .26s cubic-bezier(.32,.72,.35,1),opacity .22s;
+}
+#idDlg.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#idTitle{font-size:16px;font-weight:700;margin-bottom:6px}
+#idSub{font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6}
+
+/* 云同步卡片 */
+.cloud-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;font-size:14px}
+.cloud-row .lab{color:var(--t3);font-size:12px;width:64px;flex:none}
+.cloud-link{flex:1;min-width:0;font-size:12px;color:var(--blue);word-break:break-all}
+.admin-badge{
+  font-size:11px;font-weight:700;color:#fff;background:var(--grad);
+  padding:2px 8px;border-radius:999px;
+}
+.cloud-in{
+  flex:1;min-width:120px;padding:8px 10px;border-radius:10px;
+  border:1px solid var(--stroke-hi);font-size:13px;font-family:inherit;outline:none;
+}
+#cloudBox .btn{padding:8px 14px;font-size:13px}
+.clickable{cursor:pointer;color:var(--blue);font-weight:600}
+
+/* Toast */
+#toast{
+  position:fixed;top:calc(var(--sat) + 14px);left:50%;z-index:99;
+  transform:translate(-50%,-70px);
+  padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;
+  background:rgba(24,34,58,.94);color:#fff;
+  box-shadow:0 10px 30px rgba(18,32,64,.3);
+  transition:transform .4s cubic-bezier(.32,.72,.35,1);
+  white-space:nowrap;
+}
+#toast.show{transform:translate(-50%,0)}
+
+/* ============ 顶栏视图切换 ============ */
+#viewTabs{
+  display:flex;gap:4px;margin-top:14px;padding:4px;
+  background:#EEF2FA;border:1px solid var(--stroke);border-radius:999px;
+}
+#viewTabs button{
+  flex:1;padding:7px 0;border:none;border-radius:999px;cursor:pointer;
+  background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:var(--t2);
+  transition:all .18s;
+}
+#viewTabs button.on{background:#fff;color:var(--t1);box-shadow:0 1px 5px rgba(18,32,64,.14)}
+
+/* ============ 个人开销页 ============ */
+.stat-tabs{display:flex;gap:8px;overflow-x:auto;padding:16px 2px 2px;scrollbar-width:none}
+.stat-tabs::-webkit-scrollbar{display:none}
+.stab{
+  flex:none;padding:8px 16px;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:13px;font-weight:600;background:#EEF2FA;border:1px solid var(--stroke);color:var(--t2);
+  transition:all .18s;
+}
+.stab.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(46,107,255,.3)}
+.stat-hero{display:flex;align-items:center;gap:18px;padding:18px;margin-top:14px}
+.donut-wrap{position:relative;width:132px;height:132px;flex:none}
+.donut{width:132px;height:132px;transform:rotate(-90deg)}
+.donut circle{fill:none;stroke-width:20;stroke-linecap:butt}
+.donut .track{stroke:#EEF2FA}
+.donut-c{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 14px;
+}
+.donut-c .t{font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
+.donut-c .l{font-size:10px;color:var(--t3);margin-top:3px}
+.stat-legend{flex:1;min-width:0}
+.lg-row{display:flex;align-items:center;gap:7px;padding:4px 0;font-size:12px}
+.lg-row .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.lg-row .ln{font-weight:600;color:var(--t2)}
+.lg-row .lp{color:var(--t3);width:40px;flex:none;text-align:right}
+.lg-row .lv{margin-left:auto;font-weight:700}
+.srow{
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  padding:12px 14px;margin-bottom:8px;border-radius:var(--r-md);
+  background:var(--card);border:1px solid var(--stroke);
+  box-shadow:0 1px 6px rgba(18,32,64,.05);transition:transform .15s ease;
+}
+.srow:active{transform:scale(.975)}
+.srow .si{
+  width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;font-size:17px;
+  background:#EDF3FF;border:1px solid rgba(46,107,255,.18);
+}
+.srow .sm{flex:1;min-width:0}
+.srow .st{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .ss{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .sa{text-align:right;flex:none}
+.srow .sa .a{font-size:15px;font-weight:700}
+.srow .sa .c{font-size:11px;color:var(--t3);margin-top:2px}
+.srow.done{opacity:.48}
+.srow.done .sa .a{text-decoration:line-through}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:8px;text-align:center}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- 顶栏 -->
+<header id="hero">
+  <div id="heroRow">
+    <div style="flex:1;min-width:0">
+      <input id="tripName" value="欧洲之行" maxlength="20" aria-label="行程名称">
+      <div id="grandTotal" class="num"><small>¥</small>0.00</div>
+    </div>
+    <div id="heroBtns">
+      <button id="fab" aria-label="记一笔" title="记一笔">＋</button>
+      <button id="settingsBtn" aria-label="设置" title="设置">⚙️</button>
+    </div>
+  </div>
+  <div id="curChips"></div>
+  <div id="viewTabs">
+    <button data-v="view-stats" class="on">个人开销</button>
+    <button data-v="view-main">费用明细</button>
+  </div>
+</header>
+
+<main>
+  <!-- 主页：明细 + 结算 -->
+  <section class="view" id="view-main">
+    <div class="sec-title title-row"><span>费用明细</span><button id="multiBtn">选择</button></div>
+    <div id="expList"></div>
+
+    <div class="sec-title">最短转账方案</div>
+    <div id="txList"></div>
+
+    <div class="sec-title" id="pairTitle">结算 · 点对点明细</div>
+    <div class="pair-grid" id="pairGrid"></div>
+  </section>
+
+  <!-- 个人开销：tab 切换成员，查看各自花销 -->
+  <section class="view active" id="view-stats">
+    <div class="stat-tabs" id="statTabs"></div>
+    <div class="card stat-hero">
+      <div class="donut-wrap">
+        <svg class="donut" id="statDonut" viewBox="0 0 132 132"></svg>
+        <div class="donut-c">
+          <div class="t num" id="statTotal">¥0.00</div>
+          <div class="l" id="statTotalLab">总开销</div>
+        </div>
+      </div>
+      <div class="stat-legend" id="statLegend"></div>
+    </div>
+    <div class="sec-title">花销明细</div>
+    <div id="statList"></div>
+    <div class="stat-sub" id="statSub"></div>
+  </section>
+
+  <!-- 数据 / 设置 -->
+  <section class="view" id="view-data">
+    <div class="sec-title">云同步 · 多人共享</div>
+    <div class="card" style="padding:16px" id="cloudBox"></div>
+
+    <div class="sec-title">成员</div>
+    <div class="card" style="padding:16px">
+      <div class="member-wrap" id="memberWrap"></div>
+    </div>
+
+    <div class="sec-title">汇率 · 1 外币 = ? 人民币</div>
+    <div class="card" style="overflow:hidden" id="rateBox"></div>
+    <div class="sec-title">本地数据（CSV）</div>
+    <button class="io-btn" id="exportBtn">
+      <span class="ico">📤</span>
+      <span><span class="lab">导出 CSV</span><small>存入「文件」App 或分享，便于费用校对</small></span>
+    </button>
+    <button class="io-btn" id="importBtn">
+      <span class="ico">📥</span>
+      <span><span class="lab">导入 CSV</span><small>从备份恢复（会替换当前全部记录）</small></span>
+    </button>
+    <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+    <button class="io-btn" id="demoBtn">
+      <span class="ico">✨</span>
+      <span><span class="lab">载入示例数据</span><small>4 人欧洲行，含欧元 / 瑞郎 / 人民币</small></span>
+    </button>
+    <button class="io-btn danger" id="clearBtn">
+      <span class="ico">🗑️</span>
+      <span><span class="lab">清空全部数据</span><small>不可恢复，建议先导出 CSV</small></span>
+    </button>
+  </section>
+</main>
+
+<!-- 记一笔按钮在顶栏 #heroBtns 内 -->
+
+<!-- 记账弹窗 -->
+<div id="sheetMask"></div>
+<div id="sheet" role="dialog" aria-modal="true">
+  <div id="sheetTitle">记一笔</div>
+
+  <div class="f-lab">金额与货币</div>
+  <div class="amt-row">
+    <input class="f-input num" id="fAmount" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01">
+    <select class="f-input" id="fCur" aria-label="货币"></select>
+  </div>
+
+  <div id="cnyRow" style="display:none">
+    <div class="f-lab">折合人民币（按汇率自动计算）</div>
+    <div class="cny-wrap">
+      <span class="pre">¥</span>
+      <input class="f-input num" id="fCny" type="number" inputmode="decimal" placeholder="0.00" readonly tabindex="-1">
+    </div>
+    <div class="cny-hint" id="cnyHint"></div>
+  </div>
+
+  <div class="f-lab">类别</div>
+  <div class="cat-grid" id="fCatGrid"></div>
+
+  <div class="f-lab">内容</div>
+  <input class="f-input" id="fTitle" placeholder="例如：因特拉肯酒店两晚" maxlength="40">
+
+  <div class="f-lab">付款人</div>
+  <select class="f-input" id="fPayer" aria-label="付款人"></select>
+
+  <div class="f-lab">费用参与人</div>
+  <div class="chip-set" id="fPartSet"></div>
+
+  <div class="f-lab">付款时间</div>
+  <input class="f-input" id="fTime" type="datetime-local">
+
+  <div class="f-lab">备注（可选）</div>
+  <input class="f-input" id="fNote" placeholder="例如：含早餐" maxlength="60">
+
+  <div class="sheet-foot">
+    <button id="doneBtn" class="btn btn-ghost" style="display:none;margin-right:auto">标为完成</button>
+    <button id="delBtn" class="btn btn-danger" style="display:none">删除</button>
+    <button id="saveBtn" class="btn btn-primary">保存</button>
+  </div>
+</div>
+
+<!-- 个人往来弹窗 -->
+<div id="pairMask"></div>
+<div id="pairSheet" role="dialog" aria-modal="true">
+  <div id="pairSheetTitle"></div>
+  <div id="pairSheetSub"></div>
+  <div id="pairSheetBody"></div>
+</div>
+
+<!-- 成员名称输入弹窗 -->
+<div id="nameMask"></div>
+<div id="nameDlg" role="dialog" aria-modal="true">
+  <div id="nameTitle">添加成员</div>
+  <input class="f-input" id="nameInput" maxlength="20" placeholder="成员名字" autocomplete="off">
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="nameCancel">取消</button>
+    <button class="btn btn-primary" id="nameOk">确定</button>
+  </div>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div id="cfmMask"></div>
+<div id="cfmDlg" role="alertdialog" aria-modal="true">
+  <div id="cfmTitle"></div>
+  <div id="cfmMsg"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="cfmCancel">取消</button>
+    <button class="btn" id="cfmOk">确定</button>
+  </div>
+</div>
+
+<!-- 身份选择弹窗 -->
+<div id="idMask"></div>
+<div id="idDlg" role="dialog" aria-modal="true">
+  <div id="idTitle">我是谁？</div>
+  <div id="idSub">选择你的名字，之后你记的账会标记创建人，只能修改自己的记录</div>
+  <div class="chip-set" id="idChips"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" id="idCancel">取消</button>
+  </div>
+</div>
+
+<!-- 多选操作条 -->
+<div id="selBar">
+  <span id="selInfo" class="num"></span>
+  <button id="selDoneBtn" class="btn btn-primary">标为完成</button>
+  <button id="selCancel" class="btn btn-ghost">取消</button>
+</div>
+
+<script>
+/* ================= 数据层 ================= */
+const LS_KEY = 'tripLedger.v1';
+const CURS = { CNY:{sym:'¥',name:'人民币'}, EUR:{sym:'€',name:'欧元'}, CHF:{sym:'CHF ',name:'瑞士法郎'} };
+const CATS = [
+  {k:'hotel', i:'🏨', n:'酒店'}, {k:'flight',i:'✈️', n:'机票'},
+  {k:'ticket',i:'🎫', n:'门票'}, {k:'food',  i:'🍽️', n:'餐饮'},
+  {k:'trans', i:'🚄', n:'交通'}, {k:'shop',  i:'🛍️', n:'购物'},
+  {k:'fun',   i:'🎡', n:'娱乐'}, {k:'other', i:'💡', n:'其他'},
+];
+const catOf = k => CATS.find(c=>c.k===k) || CATS[7];
+
+let state = load() || {
+  tripName:'欧洲之行',
+  members:['我'],
+  rates:{CNY:1, EUR:8.0, CHF:8.9},
+  expenses:[]
+};
+let editingId = null;
+let form = { cur:'CNY', cat:'hotel', parts:new Set() };
+
+/* 云同步状态（room 为空 = 单机模式） */
+let cloud = { room:null, objectId:null, isAdmin:false, identity:null, v:0, dirty:false, timer:null, syncText:'' };
+
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } }
+function saveLocal(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function save(){ saveLocal(); markDirty(); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const r2 = n => Math.round(n*100)/100;
+// 记录的人民币金额：始终按设置页当前汇率实时计算
+const effCny = e => e.amount * (state.rates[e.currency] ?? 1);
+const fmt = n => n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* 通用确认弹窗（替代浏览器 confirm，与名称弹窗同风格）
+   askConfirm({title, msg, okText, danger}) → Promise<boolean> */
+const cfmMask = document.getElementById('cfmMask');
+const cfmDlg  = document.getElementById('cfmDlg');
+const cfmOk   = document.getElementById('cfmOk');
+let cfmResolve = null;
+function askConfirm({title, msg='', okText='确定', danger=true}){
+  return new Promise(res=>{
+    cfmResolve = res;
+    document.getElementById('cfmTitle').textContent = title;
+    document.getElementById('cfmMsg').textContent = msg;
+    document.getElementById('cfmMsg').style.display = msg ? 'block' : 'none';
+    cfmOk.textContent = okText;
+    cfmOk.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+    cfmMask.classList.add('open'); cfmDlg.classList.add('open');
+  });
+}
+function settleCfm(v){
+  cfmMask.classList.remove('open'); cfmDlg.classList.remove('open');
+  if(cfmResolve){ cfmResolve(v); cfmResolve = null; }
+}
+cfmOk.addEventListener('click',()=>settleCfm(true));
+document.getElementById('cfmCancel').addEventListener('click',()=>settleCfm(false));
+cfmMask.addEventListener('click',()=>settleCfm(false));
+
+/* 成员名称输入弹窗（替代浏览器 prompt，居中显示） */
+const nameMask = document.getElementById('nameMask');
+const nameDlg  = document.getElementById('nameDlg');
+const nameInput= document.getElementById('nameInput');
+let nameResolve = null;
+function askName(title, def=''){
+  return new Promise(res=>{
+    nameResolve = res;
+    document.getElementById('nameTitle').textContent = title;
+    nameInput.value = def;
+    nameMask.classList.add('open'); nameDlg.classList.add('open');
+    setTimeout(()=>{ nameInput.focus(); nameInput.select(); }, 120);
+  });
+}
+function settleName(v){
+  nameMask.classList.remove('open'); nameDlg.classList.remove('open');
+  if(nameResolve){ nameResolve(v); nameResolve = null; }
+}
+document.getElementById('nameOk').addEventListener('click',()=>settleName(nameInput.value.trim()||null));
+document.getElementById('nameCancel').addEventListener('click',()=>settleName(null));
+nameMask.addEventListener('click',()=>settleName(null));
+nameInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter') settleName(nameInput.value.trim()||null);
+  if(e.key==='Escape') settleName(null);
+});
+
+/* 新增成员（设置页用）。返回新名字，取消或为空返回 null */
+async function addMemberFlow(){
+  const name = await askName('添加成员');
+  if(!name) return null;
+  if(state.members.includes(name)){ toast('成员已存在'); return name; }
+  state.members.push(name); save(); renderAll(); toast(`已添加 ${name}`);
+  return name;
+}
+
+/* ================= 云同步（Bmob REST） ================= */
+const BMOB_ID  = '11d5b5f37aca393e6605dc866d581f64';
+const BMOB_KEY = '05de8f67ed35926c654373f1aeb20326';
+const BMOB_API = 'https://api.bmobcloud.com/1/classes/TripRoom';
+const POLL_MS  = 12000; // 前台轮询间隔
+
+const genCode = n => Array.from(crypto.getRandomValues(new Uint8Array(n)))
+  .map(b=>'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'[b%55]).join('');
+
+async function bmob(method, path, body){
+  const r = await fetch(BMOB_API + path, {
+    method,
+    headers:{ 'X-Bmob-Application-Id':BMOB_ID, 'X-Bmob-REST-API-Key':BMOB_KEY,
+              'Content-Type':'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if(!r.ok) throw new Error('bmob '+r.status);
+  return r.status===204 ? {} : r.json();
+}
+
+/* 房间数据结构：{ code, adminKey, v, data(JSON字符串) } */
+async function createRoom(){
+  const code = genCode(8), adminKey = genCode(10);
+  const res = await bmob('POST','',{ code, adminKey, v:1, data:JSON.stringify(state) });
+  return { code, adminKey, objectId:res.objectId, v:1 };
+}
+async function fetchRoom(code){
+  const q = encodeURIComponent(JSON.stringify({code}));
+  const res = await bmob('GET',`?where=${q}&limit=1`);
+  return res.results && res.results[0];
+}
+async function pushRoom(){
+  if(!cloud.room || !cloud.dirty) return;
+  try{
+    const row = await fetchRoom(cloud.room);          // 先读版本号
+    if(!row){ toast('房间已不存在'); leaveRoom(false); return; }
+    // 本地刚发生的修改以本地为准（last-write-wins），基于远端最新版本号 +1 写入
+    const nv = row.v + 1;
+    await bmob('PUT','/'+row.objectId,{ v:nv, data:JSON.stringify(state) });
+    cloud.objectId = row.objectId; cloud.v = nv; cloud.dirty = false;
+    setSync('已同步');
+  }catch(e){ setSync('同步失败，待重试'); }
+}
+function applyRemote(row){
+  try{
+    const remote = JSON.parse(row.data);
+    state = remote; cloud.v = row.v; cloud.objectId = row.objectId;
+    saveLocal(); renderAll();
+  }catch(e){}
+}
+async function pollRoom(){
+  if(!cloud.room || document.visibilityState!=='visible') return;
+  if(cloud.dirty){ pushRoom(); return; }
+  try{
+    const row = await fetchRoom(cloud.room);
+    if(!row){ toast('房间已不存在'); leaveRoom(false); return; }
+    if(row.v > cloud.v){ applyRemote(row); setSync('已更新'); }
+    else setSync('已是最新');
+  }catch(e){ setSync('连接中…'); }
+}
+function markDirty(){
+  if(!cloud.room) return;
+  cloud.dirty = true;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(pushRoom, 800); // 防抖写入
+}
+function setSync(t){
+  cloud.syncText = t;
+  const el = document.getElementById('syncInfo');
+  if(el) el.textContent = t + ' · ' + new Date().toTimeString().slice(0,8);
+}
+
+/* 加入 / 退出 */
+async function joinRoom(code){
+  const row = await fetchRoom(code);
+  if(!row) throw new Error('not found');
+  cloud.room = code; cloud.objectId = row.objectId;
+  cloud.isAdmin = localStorage.getItem('tripLedger.admin.'+code) === row.adminKey;
+  cloud.identity = localStorage.getItem('tripLedger.id.'+code) || null;
+  applyRemote(row);
+  location.hash = 'trip=' + code;
+  clearInterval(cloud._poll); cloud._poll = setInterval(pollRoom, POLL_MS);
+  setSync('已加入房间');
+}
+function leaveRoom(notify=true){
+  clearInterval(cloud._poll);
+  cloud = { room:null, objectId:null, isAdmin:false, identity:null, v:0, dirty:false, timer:null, syncText:'' };
+  history.replaceState(null,'',location.pathname);
+  if(notify) toast('已退出共享（本机数据保留）');
+  renderAll();
+}
+
+/* ================= 权限 ================= */
+const inCloud   = () => !!cloud.room;
+const canAdmin  = () => !cloud.room || cloud.isAdmin;
+const canEditRec= e => !cloud.room || cloud.isAdmin || (e.createdBy && e.createdBy === cloud.identity);
+
+/* ================= 渲染 ================= */
+function renderAll(){ renderHero(); renderList(); renderSettle(); renderRates(); renderStats(); renderCloud(); }
+
+function renderHero(){
+  document.getElementById('tripName').value = state.tripName;
+  let total = 0, byCur = {}, doneCnt = 0;
+  for(const e of state.expenses){
+    if(e.done){ doneCnt++; continue; } // 已完成的不参与计算
+    total += effCny(e);
+    byCur[e.currency] = (byCur[e.currency]||0) + e.amount;
+  }
+  document.getElementById('grandTotal').innerHTML = `<small>¥</small>${fmt(r2(total))}`;
+  document.getElementById('curChips').innerHTML = (Object.entries(byCur).map(([c,v])=>
+    `<span class="cur-chip num"><b>${CURS[c].sym}${fmt(r2(v))}</b>${CURS[c].name}</span>`
+  ).join('') + (doneCnt?`<span class="cur-chip">已结清 ${doneCnt} 笔不计入</span>`:''))
+  || `<span class="cur-chip">还没有记录，点 ＋ 记一笔</span>`;
+}
+
+/* 多选模式状态 */
+let selecting = false;
+const selected = new Set();
+
+function renderList(){
+  const box = document.getElementById('expList');
+  if(!state.expenses.length){
+    box.innerHTML = `<div class="empty"><div class="big">🌍</div>
+      <p>还没有费用记录<br>点右上角 ＋ 记下第一笔<br>或点 ⚙️ 载入示例看看效果</p></div>`;
+    return;
+  }
+  const sorted = [...state.expenses].sort((a,b)=> b.time.localeCompare(a.time));
+  box.innerHTML = sorted.map(e=>{
+    const c = catOf(e.cat);
+    const d = new Date(e.time);
+    const ds = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div class="exp-card ${e.done?'done':''} ${selected.has(e.id)?'sel':''}" data-id="${e.id}">
+      <span class="check"></span>
+      <div class="exp-ico">${c.i}</div>
+      <div class="exp-mid">
+        <div class="exp-title">${esc(e.title)}</div>
+        <div class="exp-sub">${esc(e.payer)} 付 · ${e.participants.map(esc).join('、')} 均摊 · ${ds}${e.done?' · ✅已完成':''}</div>
+      </div>
+      <div class="exp-amt num">
+        <div class="a">${CURS[e.currency].sym}${fmt(e.amount)}</div>
+        <div class="c">${e.currency==='CNY'?'':'≈¥'+fmt(r2(effCny(e)))}</div>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.exp-card').forEach(el=>
+    el.addEventListener('click', ()=>{
+      if(selecting){
+        const id = el.dataset.id;
+        selected.has(id) ? selected.delete(id) : selected.add(id);
+        el.classList.toggle('sel', selected.has(id));
+        updateSelBar();
+      } else {
+        const rec = state.expenses.find(x=>x.id===el.dataset.id);
+        if(rec && !canEditRec(rec)){ toast(`只能修改创建人（${rec.createdBy||'管理员'}）的记录`); return; }
+        openSheet(el.dataset.id);
+      }
+    }));
+}
+
+/* 多选操作条 */
+const multiBtn = document.getElementById('multiBtn');
+const selBar   = document.getElementById('selBar');
+
+function updateSelBar(){
+  const exps = state.expenses.filter(e=>selected.has(e.id));
+  const total = exps.reduce((s,e)=>s+effCny(e),0);
+  document.getElementById('selInfo').textContent = `已选 ${exps.length} 笔 · 合计 ¥${fmt(r2(total))}`;
+  // 未勾选或含未完成项 → 标为完成；仅当勾选的全部是已完成项时才显示恢复计算
+  const anyActive = !exps.length || exps.some(e=>!e.done);
+  document.getElementById('selDoneBtn').textContent = anyActive ? '标为完成' : '恢复计算';
+}
+
+function exitSelecting(){
+  selecting = false; selected.clear();
+  multiBtn.classList.remove('on'); multiBtn.textContent = '多选';
+  document.body.classList.remove('selecting');
+  selBar.classList.remove('open');
+}
+
+multiBtn.addEventListener('click',()=>{
+  if(!state.expenses.length){ toast('没有可选择的记录'); return; }
+  selecting = !selecting;
+  if(!selecting){ exitSelecting(); renderList(); return; }
+  selected.clear();
+  multiBtn.classList.add('on'); multiBtn.textContent = '取消';
+  document.body.classList.add('selecting');
+  selBar.classList.add('open');
+  updateSelBar();
+  renderList();
+});
+
+document.getElementById('selDoneBtn').addEventListener('click',()=>{
+  if(!selected.size){ toast('请先勾选记录'); return; }
+  const editable = [...selected].filter(id=>{
+    const e = state.expenses.find(x=>x.id===id);
+    return e && canEditRec(e);
+  });
+  if(!editable.length){ toast('所选记录只能由各自创建人操作'); return; }
+  const n = editable.length;
+  const anyActive = state.expenses.some(e=>editable.includes(e.id)&&!e.done);
+  state.expenses.forEach(e=>{ if(editable.includes(e.id)) e.done = anyActive; });
+  save(); exitSelecting(); renderAll();
+  const skipped = selected.size - n;
+  toast((anyActive ? `已将 ${n} 笔记为完成` : `已恢复 ${n} 笔参与计算`) + (skipped?`，跳过 ${skipped} 条他人记录`:''));
+});
+document.getElementById('selCancel').addEventListener('click',()=>{ exitSelecting(); renderList(); });
+
+function balances(){
+  const bal = {}, paid = {}, share = {};
+  state.members.forEach(m=>{ bal[m]=0; paid[m]=0; share[m]=0; });
+  for(const e of state.expenses){
+    if(e.done) continue; // 已完成的不参与计算
+    const v = effCny(e);
+    if(bal[e.payer]===undefined) continue;
+    paid[e.payer]+=v; bal[e.payer]+=v;
+    const s = v / (e.participants.length||1);
+    for(const p of e.participants) if(bal[p]!==undefined){ share[p]+=s; bal[p]-=s; }
+  }
+  return {bal, paid, share};
+}
+
+function settlements(){
+  const {bal} = balances();
+  const debtors = [], creditors = [];
+  for(const m of state.members){
+    const v = r2(bal[m]);
+    if(v < -0.005) debtors.push({m, v:-v});
+    else if(v > 0.005) creditors.push({m, v});
+  }
+  debtors.sort((a,b)=>b.v-a.v); creditors.sort((a,b)=>b.v-a.v);
+  const txs = []; let i=0, j=0;
+  while(i<debtors.length && j<creditors.length){
+    const t = Math.min(debtors[i].v, creditors[j].v);
+    txs.push({from:debtors[i].m, to:creditors[j].m, amt:r2(t)});
+    debtors[i].v-=t; creditors[j].v-=t;
+    if(debtors[i].v<0.005) i++;
+    if(creditors[j].v<0.005) j++;
+  }
+  return txs;
+}
+
+/* 点对点往来：基于每条费用记录，参与人欠付款人一份均摊；
+   同一对人双向对冲后只保留一个方向。mode: 'active' 未完成（默认）/ 'done' 已完成 */
+function pairwise(mode='active'){
+  const owe = {}; // owe[a][b]: a 欠 b
+  const add = (a,b,v)=>{ if(a===b||v<=0) return; ((owe[a] ??= {})[b] = (owe[a][b]||0) + v); };
+  for(const e of state.expenses){
+    if(mode==='active' && e.done) continue;
+    if(mode==='done' && !e.done) continue;
+    const s = effCny(e) / (e.participants.length||1);
+    for(const p of e.participants) add(p, e.payer, s);
+  }
+  const rows = [], seen = new Set();
+  for(const a in owe){
+    for(const b in owe[a]){
+      const key = [a,b].sort().join('\u0001');
+      if(seen.has(key)) continue; seen.add(key);
+      const d = r2((owe[a]?.[b]||0) - (owe[b]?.[a]||0));
+      if(d > 0.004)      rows.push({from:a, to:b, amt:d});
+      else if(d < -0.004) rows.push({from:b, to:a, amt:-d});
+    }
+  }
+  return rows;
+}
+
+function renderSettle(){
+  // 点对点明细：一人一张卡片，点击弹出该成员与所有人的往来
+  const rows = pairwise();
+  const pg = document.getElementById('pairGrid');
+  const pt = document.getElementById('pairTitle');
+  if(!state.expenses.length){
+    pt.style.display = 'none'; pg.innerHTML = '';
+  } else {
+    pt.style.display = '';
+    const {paid, share} = balances();
+    pg.innerHTML = state.members.map(m=>{
+      const pay  = r2(rows.filter(r=>r.from===m).reduce((s,r)=>s+r.amt,0));
+      const recv = r2(rows.filter(r=>r.to===m).reduce((s,r)=>s+r.amt,0));
+      const net  = r2(recv - pay);
+      const cls  = net>0.004 ? 'pos' : net<-0.004 ? 'neg' : 'zero';
+      const txt  = net>0.004 ? `应收 ¥${fmt(net)}` : net<-0.004 ? `应付 ¥${fmt(-net)}` : '账目已平';
+      return `<div class="pcard num" data-m="${esc(m)}">
+        <div class="pcard-name">${esc(m)}</div>
+        <div class="pcard-net ${cls}">${txt}</div>
+        <div class="pcard-hint">已付 ¥${fmt(r2(paid[m]))} · 均摊 ¥${fmt(r2(share[m]))}</div>
+      </div>`;
+    }).join('');
+    pg.querySelectorAll('.pcard').forEach(el=>
+      el.addEventListener('click',()=>openPairSheet(el.dataset.m)));
+  }
+
+  // 转账方案（最短路径）
+  const txs = settlements();
+  const tl = document.getElementById('txList');
+  if(!state.expenses.length){
+    tl.innerHTML = `<div class="card settled-badge" style="color:var(--t3)">记录费用后自动计算谁转给谁</div>`;
+  } else if(!txs.length){
+    tl.innerHTML = `<div class="card settled-badge">✅ 大家账目已平，无需转账</div>`;
+  } else {
+    tl.innerHTML = txs.map((t,i)=>
+      `<div class="tx-card num" style="animation-delay:${i*0.07}s">
+        <div class="tx-who">${esc(t.from)}</div>
+        <div class="tx-arrow">
+          <div class="tx-amt">¥${fmt(t.amt)}</div>
+          <div class="tx-line"></div>
+        </div>
+        <div class="tx-who">${esc(t.to)}</div>
+      </div>`).join('');
+  }
+
+  // 成员（点名字可改名，× 删除；云端模式下仅管理员可维护）
+  const mw = document.getElementById('memberWrap');
+  const ro = !canAdmin();
+  mw.innerHTML = state.members.map(m=>
+    `<span class="mchip"><span class="${ro?'':'edit'}" data-m="${esc(m)}" ${ro?'':'title="点击改名"'}>${esc(m)}</span>${state.members.length>1&&!ro?`<span class="del" data-m="${esc(m)}">×</span>`:''}</span>`
+  ).join('') + (ro ? '' : `<button id="addMemberBtn">＋ 添加成员</button>`);
+  if(ro) return; // 普通成员：成员区只读，以下维护逻辑不绑定
+  mw.querySelectorAll('.edit').forEach(el=>el.addEventListener('click',async ()=>{
+    const old = el.dataset.m;
+    const name = await askName(`修改成员「${old}」的名称`, old);
+    if(!name || name === old) return;
+    if(state.members.includes(name)){ toast('该名字已存在'); return; }
+    // 同步更新成员名单与所有费用记录中的付款人 / 参与人 / 创建人
+    state.members = state.members.map(x=>x===old?name:x);
+    for(const e of state.expenses){
+      if(e.payer===old) e.payer = name;
+      e.participants = e.participants.map(p=>p===old?name:p);
+      if(e.createdBy===old) e.createdBy = name;
+    }
+    if(cloud.identity===old){ cloud.identity=name; localStorage.setItem('tripLedger.id.'+cloud.room, name); }
+    save(); renderAll(); toast(`已改名为 ${name}`);
+  }));
+  mw.querySelectorAll('.del').forEach(el=>el.addEventListener('click',async ()=>{
+    const m = el.dataset.m;
+    if(state.expenses.some(e=>e.payer===m||e.participants.includes(m))){
+      const ok = await askConfirm({title:`删除成员「${m}」？`, msg:'该成员已出现在费用记录中，删除后相关记录将忽略此人。', okText:'删除'});
+      if(!ok) return;
+    }
+    state.members = state.members.filter(x=>x!==m); save(); renderAll();
+  }));
+  document.getElementById('addMemberBtn').addEventListener('click',()=>addMemberFlow());
+}
+
+function renderRates(){
+  const ro = !canAdmin();
+  document.getElementById('rateBox').innerHTML = ['EUR','CHF'].map(c=>
+    `<div class="rate-row">
+      <span class="lab">${CURS[c].name}<span>${CURS[c].sym} → ¥</span></span>
+      <input class="num" type="number" inputmode="decimal" step="0.01" min="0" value="${state.rates[c]}" data-c="${c}" ${ro?'readonly tabindex="-1"':''}>
+    </div>`).join('');
+  if(ro) return;
+  document.getElementById('rateBox').querySelectorAll('input').forEach(inp=>
+    inp.addEventListener('change',()=>{
+      const v = parseFloat(inp.value);
+      if(!(v>0)){ toast('汇率需大于 0'); inp.value = state.rates[inp.dataset.c]; return; }
+      state.rates[inp.dataset.c] = v; save(); renderAll(); toast('汇率已更新');
+    }));
+}
+
+/* ================= 个人开销页 ================= */
+let statTab = 'ALL'; // 'ALL' 或成员名
+const CAT_COLORS = ['#2E6BFF','#7C5CFF','#00A8E8','#1FA84A','#F5A623','#E5484D','#B865D8','#98A1B3'];
+
+/* 某人（或全部）的开销：成员口径 = 参与费用的均摊额；全部口径 = 费用全额。
+   已完成记录同样计入（属于真实花销），列表中灰显。 */
+function memberStats(m){
+  const rows = [], byCat = {}; let total = 0, paid = 0;
+  const sorted = [...state.expenses].sort((a,b)=> b.time.localeCompare(a.time));
+  for(const e of sorted){
+    const v = effCny(e);
+    if(m === 'ALL'){
+      total += v; byCat[e.cat] = (byCat[e.cat]||0) + v;
+      rows.push({e, amt:v, sub:`${esc(e.payer)} 付 · ${e.participants.map(esc).join('、')} 均摊`});
+    } else {
+      if(e.payer === m) paid += v;
+      if(e.participants.includes(m)){
+        const s = v / (e.participants.length || 1);
+        total += s; byCat[e.cat] = (byCat[e.cat]||0) + s;
+        rows.push({e, amt:s, sub:e.payer===m ? '自己付款，含他人均摊' : `${esc(e.payer)} 付，自己均摊一份`});
+      }
+    }
+  }
+  return {rows, byCat, total, paid};
+}
+
+function renderStats(){
+  // 成员 tab（含「全部」），成员被删后回退到全部
+  if(statTab !== 'ALL' && !state.members.includes(statTab)) statTab = 'ALL';
+  const tabs = document.getElementById('statTabs');
+  tabs.innerHTML = [`<button class="stab ${statTab==='ALL'?'on':''}" data-k="ALL">全部</button>`,
+    ...state.members.map(m=>`<button class="stab ${statTab===m?'on':''}" data-k="${esc(m)}">${esc(m)}</button>`)
+  ].join('');
+  tabs.querySelectorAll('.stab').forEach(el=>el.addEventListener('click',()=>{
+    statTab = el.dataset.k; renderStats();
+  }));
+
+  const {rows, byCat, total, paid} = memberStats(statTab);
+  const isAll = statTab === 'ALL';
+  const statTotalEl = document.getElementById('statTotal');
+  statTotalEl.textContent = '¥' + fmt(r2(total));
+  // 圆心文字自适应：金额越长字号越小，保证不溢出环内径
+  const len = statTotalEl.textContent.length;
+  statTotalEl.style.fontSize = len<=8 ? '16px' : len<=11 ? '13px' : '11px';
+  document.getElementById('statTotalLab').textContent = isAll ? '总开销' : '均摊开销';
+  document.getElementById('statSub').textContent =
+    isAll ? '按记录全额统计，外币按当前汇率折算'
+          : `均摊口径：参与费用的个人份额 · 实际已付 ¥${fmt(r2(paid))}（含为他人垫付）`;
+
+  // 环图（SVG，stroke-dasharray 分段）
+  const donut = document.getElementById('statDonut');
+  const legend = document.getElementById('statLegend');
+  const R = 52, C = 2 * Math.PI * R;
+  const entries = CATS.map((c,i)=>({c, v:byCat[c.k]||0, color:CAT_COLORS[i]}))
+                      .filter(x=>x.v > 0.004).sort((a,b)=>b.v-a.v);
+  if(total <= 0.004 || !entries.length){
+    donut.innerHTML = `<circle class="track" cx="66" cy="66" r="${R}"/>`;
+    legend.innerHTML = `<div class="lg-row" style="color:var(--t3)">暂无花销数据</div>`;
+  } else {
+    let off = 0;
+    const segs = [`<circle class="track" cx="66" cy="66" r="${R}"/>`];
+    for(const x of entries){
+      const len = Math.max(x.v / total * C - 1.5, 0.5); // 段间留缝
+      segs.push(`<circle cx="66" cy="66" r="${R}" stroke="${x.color}"
+        stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}"/>`);
+      off += x.v / total * C;
+    }
+    donut.innerHTML = segs.join('');
+    legend.innerHTML = entries.map(x=>
+      `<div class="lg-row">
+        <span class="dot" style="background:${x.color}"></span>
+        <span class="ln">${x.c.i} ${x.c.n}</span>
+        <span class="lp num">${Math.round(x.v/total*100)}%</span>
+        <span class="lv num">¥${fmt(r2(x.v))}</span>
+      </div>`).join('');
+  }
+
+  // 明细列表
+  const box = document.getElementById('statList');
+  if(!rows.length){
+    box.innerHTML = `<div class="empty"><div class="big">🧾</div>
+      <p>${isAll ? '还没有费用记录' : `${esc(statTab)} 没有参与的费用`}</p></div>`;
+  } else {
+    box.innerHTML = rows.map(({e, amt, sub})=>{
+      const c = catOf(e.cat);
+      const d = new Date(e.time);
+      const ds = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `<div class="srow ${e.done?'done':''}" data-id="${e.id}">
+        <div class="si">${c.i}</div>
+        <div class="sm">
+          <div class="st">${esc(e.title)}</div>
+          <div class="ss">${sub} · ${ds}${e.done?' · ✅已完成':''}</div>
+        </div>
+        <div class="sa num">
+          <div class="a">¥${fmt(r2(amt))}</div>
+          <div class="c">${CURS[e.currency].sym}${fmt(e.amount)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('.srow').forEach(el=>
+      el.addEventListener('click',()=>{
+        const rec = state.expenses.find(x=>x.id===el.dataset.id);
+        if(rec && !canEditRec(rec)){ toast(`只能修改创建人（${rec.createdBy||'管理员'}）的记录`); return; }
+        openSheet(el.dataset.id);
+      }));
+  }
+}
+
+/* ================= 云同步卡片 / 身份 ================= */
+function renderCloud(){
+  const box = document.getElementById('cloudBox');
+  // 数据操作按钮按角色显隐：导入/示例/清空仅管理员；导出人人可用
+  document.getElementById('importBtn').style.display = canAdmin() ? '' : 'none';
+  document.getElementById('demoBtn').style.display   = canAdmin() ? '' : 'none';
+  document.getElementById('clearBtn').style.display  = canAdmin() ? '' : 'none';
+  if(!cloud.room){
+    box.innerHTML = `
+      <div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:12px">
+        当前为单机模式。开启共享后会生成邀请链接，同伴打开即可一起记账，数据自动同步。
+      </div>
+      <button class="btn btn-primary" id="mkRoomBtn">开启共享 · 创建房间</button>`;
+    document.getElementById('mkRoomBtn').addEventListener('click', async ()=>{
+      if(!state.expenses.length && !await askConfirm({title:'当前没有记录', msg:'创建一个空房间并分享？', okText:'创建', danger:false})) return;
+      try{
+        const r = await createRoom();
+        cloud.room = r.code; cloud.objectId = r.objectId; cloud.v = r.v; cloud.isAdmin = true;
+        localStorage.setItem('tripLedger.admin.'+r.code, r.adminKey);
+        location.hash = 'trip=' + r.code;
+        clearInterval(cloud._poll); cloud._poll = setInterval(pollRoom, POLL_MS);
+        renderAll(); toast('房间已创建，把链接发给同伴吧');
+      }catch(e){ toast('创建失败，请检查网络'); }
+    });
+    return;
+  }
+  const link = location.origin + location.pathname + '#trip=' + cloud.room;
+  box.innerHTML = `
+    <div class="cloud-row"><span class="lab">房间码</span><b>${cloud.room}</b>
+      ${cloud.isAdmin?'<span class="admin-badge">管理员</span>':'<span style="font-size:12px;color:var(--t3)">成员</span>'}</div>
+    <div class="cloud-row"><span class="lab">邀请链接</span><span class="cloud-link">${link}</span></div>
+    <div class="cloud-row">
+      <button class="btn btn-primary" id="cpBtn">复制链接</button>
+      ${cloud.isAdmin?`<button class="btn btn-ghost" id="admKeyBtn">管理密钥</button>`:''}
+      <button class="btn btn-ghost" id="leaveBtn">退出共享</button>
+    </div>
+    <div class="cloud-row"><span class="lab">我的身份</span>
+      <span class="clickable" id="idRow">${esc(cloud.identity||'点击选择')}</span></div>
+    <div class="cloud-row"><span class="lab">同步</span>
+      <span id="syncInfo" style="font-size:12px;color:var(--t3)">${esc(cloud.syncText||'—')}</span></div>`;
+  document.getElementById('cpBtn').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(link); toast('链接已复制'); }
+    catch(e){ askName('手动复制链接', link); }
+  });
+  document.getElementById('leaveBtn').addEventListener('click', async ()=>{
+    if(await askConfirm({title:'退出共享？', msg:'仅断开本机与房间的连接，云端数据不受影响。', okText:'退出'})) leaveRoom();
+  });
+  const admBtn = document.getElementById('admKeyBtn');
+  if(admBtn) admBtn.addEventListener('click',()=>askName('管理密钥（换设备时用它恢复管理员）', localStorage.getItem('tripLedger.admin.'+cloud.room)||''));
+  document.getElementById('idRow').addEventListener('click',()=>pickIdentity(false));
+}
+
+/* 身份选择：mandatory=true 时不可取消（首次进房） */
+const idMask = document.getElementById('idMask'), idDlg = document.getElementById('idDlg');
+function pickIdentity(mandatory){
+  const chips = document.getElementById('idChips');
+  document.getElementById('idCancel').style.display = mandatory ? 'none' : '';
+  chips.innerHTML = state.members.map(m=>
+    `<button class="pick ${cloud.identity===m?'on':''}" data-m="${esc(m)}">${esc(m)}</button>`).join('')
+    || '<span style="font-size:13px;color:var(--t3)">暂无成员，请联系管理员添加</span>';
+  chips.querySelectorAll('.pick').forEach(el=>el.addEventListener('click',()=>{
+    cloud.identity = el.dataset.m;
+    localStorage.setItem('tripLedger.id.'+cloud.room, cloud.identity);
+    idMask.classList.remove('open'); idDlg.classList.remove('open');
+    renderCloud(); toast(`你好，${cloud.identity}`);
+  }));
+  idMask.classList.add('open'); idDlg.classList.add('open');
+}
+document.getElementById('idCancel').addEventListener('click',()=>{
+  idMask.classList.remove('open'); idDlg.classList.remove('open');
+});
+
+/* ================= 视图切换 ================= */
+let currentView = 'view-stats'; // 设置页之外的当前视图，用于从设置返回
+function showView(id){
+  ['view-main','view-stats','view-data'].forEach(v=>
+    document.getElementById(v).classList.toggle('active', v===id));
+  document.querySelectorAll('#viewTabs button').forEach(b=>
+    b.classList.toggle('on', b.dataset.v===id));
+  settingsBtn.textContent = id==='view-data' ? '✕' : '⚙️';
+  settingsBtn.title = id==='view-data' ? '返回' : '设置';
+}
+document.querySelectorAll('#viewTabs button').forEach(b=>
+  b.addEventListener('click',()=>{
+    currentView = b.dataset.v;
+    exitSelecting(); renderList(); // 切换视图时退出多选，收起操作条
+    showView(currentView);
+  }));
+const settingsBtn = document.getElementById('settingsBtn');
+settingsBtn.addEventListener('click',()=>{
+  const inData = document.getElementById('view-data').classList.contains('active');
+  exitSelecting(); renderList();
+  showView(inData ? currentView : 'view-data');
+});
+
+/* ================= 记账 Sheet ================= */
+const sheet = document.getElementById('sheet'), mask = document.getElementById('sheetMask');
+const fCurEl = document.getElementById('fCur');
+const fPayerEl = document.getElementById('fPayer');
+const fCnyEl = document.getElementById('fCny');
+
+function buildStaticSelects(){
+  fCurEl.innerHTML = Object.entries(CURS).map(([k,c])=>`<option value="${k}">${c.sym} ${c.name}</option>`).join('');
+}
+
+function rebuildPayerOptions(selected){
+  fPayerEl.innerHTML = state.members.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if(selected && state.members.includes(selected)) fPayerEl.value = selected;
+}
+
+function autoCny(){
+  const amt = parseFloat(document.getElementById('fAmount').value);
+  if(amt>0){
+    fCnyEl.value = r2(amt * (state.rates[form.cur] ?? 1));
+    document.getElementById('cnyHint').textContent =
+      `汇率 1 ${CURS[form.cur].name} = ¥${state.rates[form.cur]}`;
+  } else {
+    fCnyEl.value = '';
+    document.getElementById('cnyHint').textContent = '';
+  }
+}
+
+function syncCnyRow(){
+  const show = form.cur !== 'CNY';
+  document.getElementById('cnyRow').style.display = show ? 'block' : 'none';
+  if(show) autoCny();
+}
+
+fCurEl.addEventListener('change', ()=>{ form.cur = fCurEl.value; syncCnyRow(); });
+document.getElementById('fAmount').addEventListener('input', syncCnyRow);
+
+function buildFormChips(){
+  // 类别
+  document.getElementById('fCatGrid').innerHTML = CATS.map(c=>
+    `<button class="cat-cell ${form.cat===c.k?'on':''}" data-k="${c.k}"><span class="ci">${c.i}</span>${c.n}</button>`).join('');
+  document.querySelectorAll('#fCatGrid .cat-cell').forEach(el=>el.addEventListener('click',()=>{
+    form.cat = el.dataset.k;
+    document.querySelectorAll('#fCatGrid .cat-cell').forEach(x=>x.classList.toggle('on',x.dataset.k===form.cat));
+  }));
+  // 参与人（勾选即参与均摊）
+  document.getElementById('fPartSet').innerHTML = state.members.map(m=>
+    `<button class="pick ${form.parts.has(m)?'on':''}" data-m="${esc(m)}">${esc(m)}</button>`).join('');
+  document.querySelectorAll('#fPartSet .pick[data-m]').forEach(el=>el.addEventListener('click',()=>{
+    const m = el.dataset.m;
+    form.parts.has(m) ? form.parts.delete(m) : form.parts.add(m);
+    el.classList.toggle('on', form.parts.has(m));
+  }));
+}
+
+function toLocalInput(d){
+  const p = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function openSheet(id){
+  editingId = id || null;
+  const e = id ? state.expenses.find(x=>x.id===id) : null;
+  form.cur  = e ? e.currency : 'CNY';
+  form.cat  = e ? e.cat : 'hotel';
+  form.parts= new Set(e ? e.participants : state.members);
+  document.getElementById('sheetTitle').textContent = e ? '编辑记录' : '记一笔';
+  document.getElementById('fAmount').value = e ? e.amount : '';
+  document.getElementById('fTitle').value  = e ? e.title : '';
+  document.getElementById('fNote').value   = e ? (e.note||'') : '';
+  document.getElementById('fTime').value   = e ? e.time : toLocalInput(new Date());
+  document.getElementById('delBtn').style.display = e ? 'block' : 'none';
+  const doneBtn = document.getElementById('doneBtn');
+  doneBtn.style.display = e ? 'block' : 'none';
+  doneBtn.textContent = e && e.done ? '恢复计算' : '标为完成';
+  // 下拉：货币 / 付款人
+  fCurEl.value = form.cur;
+  rebuildPayerOptions(e ? e.payer : state.members[0]);
+  // 折算金额
+  syncCnyRow();
+  buildFormChips();
+  mask.classList.add('open'); sheet.classList.add('open');
+  sheet.scrollTop = 0; // 每次打开都从头展示
+}
+function closeSheet(){ mask.classList.remove('open'); sheet.classList.remove('open'); editingId=null; }
+
+/* ================= 个人往来 Sheet ================= */
+const pairSheet = document.getElementById('pairSheet'), pairMask = document.getElementById('pairMask');
+
+function openPairSheet(m){
+  const rows = pairwise('active').filter(r=>r.from===m||r.to===m);
+  const hist = pairwise('done').filter(r=>r.from===m||r.to===m);
+  const pay  = r2(rows.filter(r=>r.from===m).reduce((s,r)=>s+r.amt,0));
+  const recv = r2(rows.filter(r=>r.to===m).reduce((s,r)=>s+r.amt,0));
+  const net  = r2(recv - pay);
+  document.getElementById('pairSheetTitle').textContent = `${m} 的往来明细`;
+  document.getElementById('pairSheetSub').textContent = '按未完成费用逐笔均摊、同一人双向对冲后得出';
+  const rowHtml = (r, histCls)=>{
+    const out = r.from===m;
+    const other = out ? r.to : r.from;
+    return `<div class="prow num ${histCls}">
+      <span class="who">${out?'→':'←'} ${esc(other)}</span>
+      <span class="amt ${out?'neg':'pos'}">${out?'应付':'应收'} ¥${fmt(r.amt)}</span>
+    </div>`;
+  };
+  let html = rows.map(r=>rowHtml(r,'')).join('');
+  if(hist.length){
+    html += `<div class="prow-sep">已完成（历史，不参与计算）</div>`
+          + hist.map(r=>rowHtml(r,'hist')).join('');
+  }
+  if(!rows.length && !hist.length) html = `<div class="prow empty">与其他成员没有往来</div>`;
+  else if(rows.length) html += `<div class="prow total num">
+      <span class="who">合计</span>
+      <span class="amt ${net>0.004?'pos':net<-0.004?'neg':''}">${net>0.004?'净应收 +':net<-0.004?'净应付 −':''}¥${fmt(Math.abs(net))}</span>
+    </div>`;
+  document.getElementById('pairSheetBody').innerHTML = html;
+  pairMask.classList.add('open'); pairSheet.classList.add('open');
+  pairSheet.scrollTop = 0;
+}
+function closePairSheet(){ pairMask.classList.remove('open'); pairSheet.classList.remove('open'); }
+pairMask.addEventListener('click', closePairSheet);
+
+document.getElementById('fab').addEventListener('click',()=>{
+  if(!state.members.length){ toast('请先在 ⚙️ 设置里添加成员'); return; }
+  if(inCloud() && !cloud.identity){ toast('请先选择你的身份'); pickIdentity(true); return; }
+  openSheet(null);
+});
+mask.addEventListener('click', closeSheet);
+
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const amt = parseFloat(document.getElementById('fAmount').value);
+  const title = document.getElementById('fTitle').value.trim();
+  const time = document.getElementById('fTime').value;
+  const note = document.getElementById('fNote').value.trim();
+  const payer = fPayerEl.value;
+  if(!(amt>0))            { toast('请输入有效金额'); return; }
+  if(!title)              { toast('请填写费用内容'); return; }
+  if(!payer)              { toast('请选择付款人'); return; }
+  if(!form.parts.size)    { toast('请选择费用参与人'); return; }
+  if(!time)               { toast('请选择付款时间'); return; }
+
+  const rec = {
+    id: editingId || uid(),
+    title, cat: form.cat,
+    amount: r2(amt), currency: form.cur,
+    payer,
+    participants: state.members.filter(m=>form.parts.has(m)),
+    time, note
+  };
+  if(editingId){
+    const old = state.expenses.find(x=>x.id===editingId);
+    rec.createdBy = old && old.createdBy; // 编辑保留原创建人
+    state.expenses = state.expenses.map(x=>x.id===editingId?rec:x);
+    toast('已更新');
+  } else {
+    rec.createdBy = cloud.identity || undefined; // 云端模式打创建人标记
+    state.expenses.push(rec);
+    toast(`已记下 ${CURS[rec.currency].sym}${fmt(rec.amount)}`);
+  }
+  save(); renderAll(); closeSheet();
+});
+
+document.getElementById('delBtn').addEventListener('click',async ()=>{
+  if(!editingId) return;
+  if(!await askConfirm({title:'删除这条记录？', okText:'删除'})) return;
+  state.expenses = state.expenses.filter(x=>x.id!==editingId);
+  save(); renderAll(); closeSheet(); toast('已删除');
+});
+
+// 单条标记完成 / 恢复计算
+document.getElementById('doneBtn').addEventListener('click',()=>{
+  if(!editingId) return;
+  const e = state.expenses.find(x=>x.id===editingId);
+  if(!e) return;
+  e.done = !e.done;
+  save(); renderAll(); closeSheet();
+  toast(e.done ? '已标记完成，不再参与计算' : '已恢复参与计算');
+});
+
+/* ================= CSV ================= */
+const CSV_HEAD = ['记录ID','时间','类别','内容','金额','货币','汇率(折人民币)','折合人民币','付款人','参与人数','参与人','每人分摊(人民币)','备注','状态'];
+const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
+
+function toCSV(){
+  const rows = [CSV_HEAD.map(q).join(',')];
+  for(const e of [...state.expenses].sort((a,b)=>a.time.localeCompare(b.time))){
+    const conv = r2(effCny(e));
+    const rate = state.rates[e.currency] ?? 1;
+    rows.push([
+      e.id, e.time.replace('T',' '), catOf(e.cat).n, e.title,
+      e.amount.toFixed(2), CURS[e.currency].name, rate, conv.toFixed(2),
+      e.payer, e.participants.length, e.participants.join('|'),
+      r2(conv/(e.participants.length||1)).toFixed(2), e.note||'',
+      e.done?'已完成':'未完成'
+    ].map(q).join(','));
+  }
+  return '\uFEFF' + rows.join('\r\n');
+}
+
+async function exportCSV(){
+  if(!state.expenses.length){ toast('没有可导出的记录'); return; }
+  const name = `${state.tripName||'旅行账单'}-${new Date().toISOString().slice(0,10)}.csv`;
+  const file = new File([toCSV()], name, {type:'text/csv;charset=utf-8'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:name}); toast('已导出'); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  toast('已开始下载');
+}
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+/* CSV 解析（支持引号转义） */
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/,'');
+  const rows = []; let row=[], cur='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else inQ=false; }
+      else cur+=c;
+    } else if(c==='"') inQ=true;
+    else if(c===','){ row.push(cur); cur=''; }
+    else if(c==='\n'||c==='\r'){
+      if(c==='\r'&&text[i+1]==='\n') i++;
+      row.push(cur); cur='';
+      if(row.some(v=>v!=='')) rows.push(row);
+      row=[];
+    } else cur+=c;
+  }
+  if(cur!==''||row.length){ row.push(cur); if(row.some(v=>v!=='')) rows.push(row); }
+  return rows;
+}
+
+const CAT_BY_NAME = Object.fromEntries(CATS.map(c=>[c.n,c.k]));
+const CUR_BY_NAME = {'人民币':'CNY','欧元':'EUR','瑞士法郎':'CHF','CHF':'CHF','CNY':'CNY','EUR':'EUR'};
+
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('csvFile').click());
+document.getElementById('csvFile').addEventListener('change', async ev=>{
+  const f = ev.target.files[0]; ev.target.value='';
+  if(!f) return;
+  const rows = parseCSV(await f.text());
+  if(rows.length<2){ toast('CSV 内容为空或格式不对'); return; }
+  const head = rows[0];
+  const idx = n => head.findIndex(h=>h.trim()===n);
+  if(idx('内容')<0 || idx('金额')<0 || idx('付款人')<0){ toast('缺少必要列（内容/金额/付款人）'); return; }
+
+  const exps = [], memberSet = new Set();
+  for(const r of rows.slice(1)){
+    const amt = parseFloat(r[idx('金额')]);
+    if(!(amt>0)) continue;
+    const payer = (r[idx('付款人')]||'').trim();
+    const parts = (r[idx('参与人')]||'').split('|').map(s=>s.trim()).filter(Boolean);
+    memberSet.add(payer); parts.forEach(p=>memberSet.add(p));
+    let t = (r[idx('时间')]||'').trim().replace(' ','T');
+    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(t)) t = toLocalInput(new Date());
+    exps.push({
+      id: (r[idx('记录ID')]||'').trim() || uid(),
+      time: t.slice(0,16),
+      cat: CAT_BY_NAME[(r[idx('类别')]||'').trim()] || 'other',
+      title: (r[idx('内容')]||'').trim() || '未命名',
+      amount: r2(amt),
+      currency: CUR_BY_NAME[(r[idx('货币')]||'').trim()] || 'CNY',
+      payer, participants: parts.length?parts:[payer],
+      note: (r[idx('备注')]||'').trim(),
+      done: (r[idx('状态')]||'').trim()==='已完成'
+    });
+  }
+  if(!exps.length){ toast('没有解析到有效记录'); return; }
+  if(state.expenses.length && !await askConfirm({title:'导入并替换当前数据？', msg:`当前 ${state.expenses.length} 条记录将被替换，建议先导出备份。`, okText:'导入'})) return;
+  state.expenses = exps;
+  state.members = [...memberSet];
+  save(); renderAll(); toast(`已导入 ${exps.length} 条记录`);
+});
+
+/* ================= 其他 ================= */
+document.getElementById('tripName').addEventListener('change', e=>{
+  state.tripName = e.target.value.trim() || '我的行程'; save(); renderHero();
+});
+
+document.getElementById('clearBtn').addEventListener('click',async ()=>{
+  if(!await askConfirm({title:'清空全部数据？', msg:'将删除全部记录与成员，此操作不可恢复，建议先导出 CSV 备份。', okText:'清空'})) return;
+  state.expenses = []; state.members = ['我'];
+  save(); renderAll(); toast('已清空');
+});
+
+document.getElementById('demoBtn').addEventListener('click',async ()=>{
+  if(state.expenses.length && !await askConfirm({title:'载入示例数据？', msg:'当前数据将被替换。', okText:'载入', danger:false})) return;
+  state.members = ['我','阿哲','小雨','Leo'];
+  const all = state.members;
+  const t = (d,h,mi)=>`2026-08-${String(d).padStart(2,'0')}T${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`;
+  state.expenses = [
+    {id:uid(),title:'上海 → 巴黎 机票',cat:'flight',amount:12800,currency:'CNY',payer:'我',participants:all,time:t(10,9,30),note:'四人往返'},
+    {id:uid(),title:'巴黎歌剧院区酒店 3 晚',cat:'hotel',amount:540,currency:'EUR',payer:'阿哲',participants:all,time:t(10,15,0),note:'含早'},
+    {id:uid(),title:'卢浮宫门票',cat:'ticket',amount:88,currency:'EUR',payer:'小雨',participants:all,time:t(11,10,20),note:''},
+    {id:uid(),title:'塞纳河游船晚餐',cat:'food',amount:236,currency:'EUR',payer:'Leo',participants:all,time:t(12,19,45),note:''},
+    {id:uid(),title:'巴黎 → 因特拉肯 欧铁',cat:'trans',amount:312,currency:'EUR',payer:'我',participants:all,time:t(13,8,15),note:'一等座'},
+    {id:uid(),title:'少女峰登山火车票',cat:'ticket',amount:756,currency:'CHF',payer:'阿哲',participants:all,time:t(14,7,50),note:''},
+    {id:uid(),title:'因特拉肯湖景酒店 2 晚',cat:'hotel',amount:620,currency:'CHF',payer:'我',participants:all,time:t(13,16,30),note:''},
+    {id:uid(),title:'芝士火锅晚餐',cat:'food',amount:142,currency:'CHF',payer:'小雨',participants:['我','阿哲','小雨'],time:t(14,19,0),note:'Leo 不吃芝士'},
+    {id:uid(),title:'瑞士军刀伴手礼',cat:'shop',amount:89,currency:'CHF',payer:'Leo',participants:['Leo'],time:t(15,11,0),note:'自用'},
+  ];
+  save(); renderAll(); toast('示例数据已载入');
+});
+
+buildStaticSelects();
+renderAll();
+
+/* 启动：链接带 #trip= 房间码 → 加入共享房间 */
+(async ()=>{
+  const m = location.hash.match(/trip=([A-Za-z0-9]+)/);
+  if(!m) return;
+  try{
+    await joinRoom(m[1]);
+    if(!cloud.identity || !state.members.includes(cloud.identity)) pickIdentity(true);
+    else renderAll();
+    toast('已加入共享房间');
+  }catch(e){ toast('加入房间失败：房间不存在或网络异常'); }
+})();
+</script>
+</body>
+</html>
