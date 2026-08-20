@@ -57,10 +57,10 @@ body{
 }
 #tripName:focus{color:var(--blue)}
 #grandTotal{
-  font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1.08;margin-top:4px;
+  font-size:36px;font-weight:700;letter-spacing:-.03em;line-height:1.08;margin-top:4px;
   color:var(--t1);
 }
-#grandTotal small{font-size:20px;font-weight:600;margin-right:2px;color:var(--t2)}
+#grandTotal small{font-size:17px;font-weight:600;margin-right:2px;color:var(--t2)}
 #curChips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .cur-chip{
   display:flex;align-items:baseline;gap:5px;
@@ -69,6 +69,8 @@ body{
   font-size:12px;color:var(--t2);
 }
 .cur-chip b{color:var(--t1);font-size:13px}
+.done-note{font-size:12px;color:var(--t3);align-self:center;padding:0 2px}
+.done-note b{color:var(--t1)}
 #heroBtns{display:flex;gap:8px;flex:none}
 #settingsBtn,#fab,#helpBtn{
   flex:none;width:40px;height:40px;border-radius:13px;cursor:pointer;
@@ -91,7 +93,7 @@ body{
 #helpDlg{
   position:fixed;left:50%;top:50%;z-index:71;
   width:min(560px, calc(100vw - 32px));
-  max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:86dvh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;
   border-radius:24px;background:#FBFCFE;border:1px solid var(--stroke);
   box-shadow:0 24px 64px rgba(18,32,64,.28);
   padding:20px 20px calc(20px + var(--sab));
@@ -113,7 +115,7 @@ body{
 #recDlg{
   position:fixed;left:50%;top:50%;z-index:57;
   width:min(440px, calc(100vw - 32px));
-  max-height:84dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:84dvh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;
   border-radius:24px;background:#FBFCFE;border:1px solid var(--stroke);
   box-shadow:0 24px 64px rgba(18,32,64,.28);
   padding:20px 20px calc(20px + var(--sab));
@@ -221,7 +223,7 @@ body.selecting .exp-card .check{display:grid;place-items:center}
 
 /* ============ 结算区 ============ */
 /* 点对点结算：一人一张卡片 */
-.pair-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pair-grid{display:grid;grid-template-columns:1fr;gap:10px}
 .pcard{
   padding:14px 15px;border-radius:var(--r-md);cursor:pointer;
   background:var(--card);border:1px solid var(--stroke);
@@ -245,7 +247,7 @@ body.selecting .exp-card .check{display:grid;place-items:center}
 #pairSheet{
   position:fixed;left:50%;top:50%;z-index:53;
   width:min(420px, calc(100vw - 32px));
-  max-height:76dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:76dvh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;
   border-radius:24px;background:#FBFCFE;
   border:1px solid var(--stroke);
   box-shadow:0 24px 64px rgba(18,32,64,.28);
@@ -258,10 +260,21 @@ body.selecting .exp-card .check{display:grid;place-items:center}
 #pairSheetTitle{font-size:18px;font-weight:700;margin-bottom:4px}
 #pairSheetSub{font-size:12px;color:var(--t3);margin-bottom:12px}
 .prow{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
   padding:13px 15px;margin-bottom:8px;border-radius:var(--r-md);
   background:var(--card);border:1px solid var(--stroke);
 }
+.prow-chev{margin-left:8px;color:var(--t3);font-weight:400;font-size:12px;display:inline-block;transition:transform .15s}
+.prow.open .prow-chev{transform:rotate(90deg)}
+.pbills{padding:2px 6px 8px 18px;margin:-4px 0 8px}
+.pbill{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:5px 0;border-bottom:1px dashed var(--stroke);font-size:12px}
+.pbill:last-child{border-bottom:none}
+.pbill .t{color:var(--t2);min-width:0}
+.pbill-sub{display:block;font-size:10px;color:var(--t3);margin-top:1px}
+.pbill-time{color:var(--t3);font-weight:400;font-size:11px;margin-left:6px;white-space:nowrap}
+.pbill .a{flex:none;font-weight:600}
+.pbill .a.neg{color:var(--red)}
+.pbill .a.pos{color:var(--green)}
 .prow .who{font-size:14px;font-weight:600}
 .prow .amt{font-size:15px;font-weight:700}
 .prow .amt.neg{color:var(--red)}
@@ -373,7 +386,7 @@ body.selecting .exp-card .check{display:grid;place-items:center}
 #sheet{
   position:fixed;left:50%;top:50%;z-index:51;
   width:min(480px, calc(100vw - 32px));
-  max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:86dvh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;
   border-radius:24px;
   background:#FBFCFE;
   border:1px solid var(--stroke);
@@ -607,15 +620,19 @@ select.f-input{
   <div id="viewTabs">
     <button data-v="view-stats" class="on">个人开销</button>
     <button data-v="view-main">费用明细</button>
+    <button data-v="view-settle">费用结算</button>
   </div>
 </header>
 
 <main>
-  <!-- 主页：明细 + 结算 -->
+  <!-- 主页：费用明细 -->
   <section class="view" id="view-main">
     <div class="sec-title title-row"><span>费用明细</span><button id="multiBtn">选择</button></div>
     <div id="expList"></div>
+  </section>
 
+  <!-- 费用结算：转账方案 + 点对点明细 -->
+  <section class="view" id="view-settle">
     <div class="sec-title">最短转账方案</div>
     <div id="txList"></div>
 
@@ -808,7 +825,7 @@ select.f-input{
       </svg>
       <div class="help-cap">记账表单顺序：付款人 → 可见性 → 参与人 → 金额分类</div>
     </div>
-    <p>顶部两个大页签：<b>个人开销</b> 看每个人花了多少；<b>费用明细</b> 看全部账单和结算方案。</p>
+    <p>顶部三个大页签：<b>个人开销</b> 看每个人花了多少；<b>费用明细</b> 管理全部账单；<b>费用结算</b> 看谁该给谁转钱。</p>
 
     <h3>🔒 公开与私密账单</h3>
     <h4>公开账单</h4>
@@ -879,13 +896,18 @@ select.f-input{
       <li>点任意一条记录，弹窗查看完整详情（金额、汇率、参与人、份额、可见性）。</li>
     </ul>
 
-    <h3>💸 费用明细与结算</h3>
+    <h3>💸 费用明细与费用结算</h3>
+    <h4>费用明细</h4>
     <ul>
       <li>账单按付款时间倒序排列。</li>
+      <li>点账单可编辑（只能改自己创建的）。</li>
       <li>多选账单可「标为完成」，已结清的账不再参与结算。</li>
+    </ul>
+    <h4>费用结算</h4>
+    <ul>
+      <li><b>最短转账方案</b>：用最少转账次数结清所有人的方案。</li>
       <li><b>点对点明细</b>：每两个人之间的净欠款。</li>
-      <li><b>最短转账路径</b>：用最少转账次数结清所有人的方案。</li>
-      <li>以上两项都不含私密账单和已完成账单。</li>
+      <li>两者都不含私密账单和已完成账单。</li>
     </ul>
 
     <h3>💱 汇率</h3>
@@ -1347,9 +1369,11 @@ function renderHero(){
     if(!canSeeRec(e)) continue; // 他人私密账单不可见
     if(memberMode){
       if(!involves(e, memberMode)) continue; // 该成员创建或参与的账单
-      const s = e.amount / (e.participants.length||1);
-      total += s * rateFor(e.currency, e.time);
-      byCur[e.currency] = (byCur[e.currency]||0) + s;
+      if(e.participants.includes(memberMode)){ // 代付他人（自己不分摊）时份额为 0
+        const s = e.amount / (e.participants.length||1);
+        total += s * rateFor(e.currency, e.time);
+        byCur[e.currency] = (byCur[e.currency]||0) + s;
+      }
       if(e.done) doneCnt++;
     } else {
       if(e.private) continue;      // 私密账单是个人花销，不计入全员总额
@@ -1361,8 +1385,8 @@ function renderHero(){
   document.getElementById('grandTotal').innerHTML = `<small>¥</small>${fmt(r2(total))}`;
   document.getElementById('curChips').innerHTML = (Object.entries(byCur).map(([c,v])=>
     `<span class="cur-chip num"><b>${CURS[c].sym}${fmt(r2(v))}</b>${CURS[c].name}</span>`
-  ).join('') + (doneCnt ? (memberMode||statsAll ? `<span class="cur-chip">含 ${doneCnt} 笔已完成</span>`
-                                              : `<span class="cur-chip">已结清 ${doneCnt} 笔不计入</span>`) : ''))
+  ).join('') + (doneCnt ? (memberMode||statsAll ? `<span class="done-note">含 <b>${doneCnt}</b> 笔已完成</span>`
+                                              : `<span class="done-note">已结清 <b>${doneCnt}</b> 笔不计入</span>`) : ''))
   || `<span class="cur-chip">还没有记录，点 ＋ 记一笔</span>`;
 }
 
@@ -1656,9 +1680,11 @@ function memberStats(m){
     } else {
       if(!involves(e, m)) continue; // 只统计该成员创建或参与的
       if(e.payer === m) paid += v;
-      const share = e.amount / (e.participants.length || 1); // 每人份额（原币）
-      const s = v / (e.participants.length || 1);
-      total += s; byCat[e.cat] = (byCat[e.cat]||0) + s;
+      // 付款人未必是分摊人：代付他人（自己不在参与人里）时，自己的份额为 0，不计入个人开销
+      const inSplit = e.participants.includes(m);
+      const share = inSplit ? e.amount / (e.participants.length || 1) : 0; // 每人份额（原币）
+      const s = inSplit ? v / (e.participants.length || 1) : 0;
+      total += s; if(s) byCat[e.cat] = (byCat[e.cat]||0) + s;
       rows.push({e, amt:s, orig:share, pri:!!e.private,
         sub:(e.private ? '私密 · ' : '')
           + `${esc(e.payer)} 付，${e.participants.map(esc).join('、')}均摊`});
@@ -1699,7 +1725,7 @@ function renderStats(){
   statTotalEl.textContent = '¥' + fmt(r2(total));
   // 圆心文字自适应：金额越长字号越小，保证不溢出环内径
   const len = statTotalEl.textContent.length;
-  statTotalEl.style.fontSize = len<=8 ? '16px' : len<=11 ? '13px' : '11px';
+  statTotalEl.style.fontSize = len<=7 ? '16px' : len<=9 ? '13px' : len<=11 ? '11px' : '9.5px';
   document.getElementById('statTotalLab').textContent =
     isAll ? '总开销' : statVis==='pri' ? '私密开销' : statVis==='pub' ? '公开开销' : '均摊开销';
   const statSubEl = document.getElementById('statSub');
@@ -1981,7 +2007,7 @@ document.getElementById('idCancel').addEventListener('click',()=>{
 /* ================= 视图切换 ================= */
 let currentView = 'view-stats'; // 设置页之外的当前视图，用于从设置返回
 function showView(id){
-  ['view-main','view-stats','view-data'].forEach(v=>
+  ['view-main','view-stats','view-settle','view-data'].forEach(v=>
     document.getElementById(v).classList.toggle('active', v===id));
   document.querySelectorAll('#viewTabs button').forEach(b=>
     b.classList.toggle('on', b.dataset.v===id));
@@ -2139,6 +2165,27 @@ function closeSheet(){ mask.classList.remove('open'); sheet.classList.remove('op
 /* ================= 个人往来 Sheet ================= */
 const pairSheet = document.getElementById('pairSheet'), pairMask = document.getElementById('pairMask');
 
+/* 两人之间的逐笔往来（公开账单，active=未完成 / done=已完成），按付款时间倒序 */
+function pairBillsHtml(m, other, mode){
+  const list = state.expenses
+    .filter(e=>!e.private && (mode==='done' ? e.done : !e.done))
+    .filter(e=>(e.payer===m && e.participants.includes(other)) || (e.payer===other && e.participants.includes(m)))
+    .sort((a,b)=>b.time.localeCompare(a.time));
+  if(!list.length) return `<div class="pbill" style="color:var(--t3)">无逐笔记录</div>`;
+  return list.map(e=>{
+    const c = catOf(e.cat);
+    const d = new Date(e.time);
+    const ds = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const n = e.participants.length || 1;
+    const share = effCny(e) / n; // 对方的那份均摊（折人民币）
+    const iOwe = e.payer !== m;  // m 是参与人 → m 应付；m 是付款人 → m 应收
+    return `<div class="pbill num">
+      <span class="t">${c.i} ${esc(e.title)}<span class="pbill-time">${ds}</span><span class="pbill-sub">${esc(e.payer)} 付 · ${e.participants.map(esc).join('、')}均摊</span></span>
+      <span class="a ${iOwe?'neg':'pos'}">${iOwe?'应付':'应收'} ¥${fmt(r2(share))}</span>
+    </div>`;
+  }).join('');
+}
+
 function openPairSheet(m){
   const rows = pairwise('active').filter(r=>r.from===m||r.to===m);
   const hist = pairwise('done').filter(r=>r.from===m||r.to===m);
@@ -2146,12 +2193,12 @@ function openPairSheet(m){
   const recv = r2(rows.filter(r=>r.to===m).reduce((s,r)=>s+r.amt,0));
   const net  = r2(recv - pay);
   document.getElementById('pairSheetTitle').textContent = `${m} 的往来明细`;
-  document.getElementById('pairSheetSub').textContent = '按未完成费用逐笔均摊、同一人双向对冲后得出';
+  document.getElementById('pairSheetSub').textContent = '点击条目展开逐笔明细 · 逐笔均摊、同一人双向对冲后得出';
   const rowHtml = (r, histCls)=>{
     const out = r.from===m;
     const other = out ? r.to : r.from;
-    return `<div class="prow num ${histCls}">
-      <span class="who">${out?'→':'←'} ${esc(other)}</span>
+    return `<div class="prow num ${histCls}" data-other="${esc(other)}" data-mode="${histCls?'done':'active'}">
+      <span class="who">${out?'→':'←'} ${esc(other)}<span class="prow-chev">›</span></span>
       <span class="amt ${out?'neg':'pos'}">${out?'应付':'应收'} ¥${fmt(r.amt)}</span>
     </div>`;
   };
@@ -2165,7 +2212,18 @@ function openPairSheet(m){
       <span class="who">合计</span>
       <span class="amt ${net>0.004?'pos':net<-0.004?'neg':''}">${net>0.004?'净应收 +':net<-0.004?'净应付 −':''}¥${fmt(Math.abs(net))}</span>
     </div>`;
-  document.getElementById('pairSheetBody').innerHTML = html;
+  const body = document.getElementById('pairSheetBody');
+  body.innerHTML = html;
+  // 点击某个人的条目 → 展开/收起与该成员的所有逐笔往来（时间倒序）
+  body.querySelectorAll('.prow[data-other]').forEach(el=>
+    el.addEventListener('click',()=>{
+      const next = el.nextElementSibling;
+      if(next && next.classList.contains('pbills')){ next.remove(); el.classList.remove('open'); return; }
+      const div = document.createElement('div');
+      div.className = 'pbills';
+      div.innerHTML = pairBillsHtml(m, el.dataset.other, el.dataset.mode);
+      el.after(div); el.classList.add('open');
+    }));
   pairMask.classList.add('open'); pairSheet.classList.add('open');
   pairSheet.scrollTop = 0;
 }
@@ -2360,6 +2418,7 @@ document.getElementById('demoBtn').addEventListener('click',async ()=>{
     {id:uid(),title:'少女峰登山火车票',cat:'ticket',amount:756,currency:'CHF',payer:'阿哲',participants:all,time:t(14,7,50),note:'',createdBy:'阿哲'},
     {id:uid(),title:'芝士火锅晚餐',cat:'food',amount:142,currency:'CHF',payer:'小雨',participants:['我','阿哲','小雨'],time:t(14,19,0),note:'Leo 不吃芝士',createdBy:'小雨'},
     {id:uid(),title:'瑞士军刀伴手礼',cat:'shop',amount:89,currency:'CHF',payer:'Leo',participants:['Leo'],time:t(15,11,0),note:'自用',createdBy:'Leo'},
+    {id:uid(),title:'少女峰巧克力礼盒',cat:'shop',amount:45,currency:'CHF',payer:'小雨',participants:['Leo'],time:t(15,17,30),note:'小雨帮 Leo 代付，Leo 一人分摊',createdBy:'小雨'},
     {id:uid(),title:'急救感冒药',cat:'other',amount:24.5,currency:'CHF',payer:'阿哲',participants:['阿哲'],time:t(15,9,20),note:'个人药品',createdBy:'阿哲',private:true},
     {id:uid(),title:'因特拉肯滑翔伞',cat:'fun',amount:190,currency:'CHF',payer:'我',participants:['我','Leo'],time:t(15,14,0),note:'两人体验',createdBy:'我'},
     {id:uid(),title:'巴黎市内地铁周卡',cat:'trans',amount:30,currency:'EUR',payer:'小雨',participants:['小雨'],time:t(11,9,5),note:'',createdBy:'小雨',done:true},
