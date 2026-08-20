@@ -51,11 +51,10 @@ body{
 #heroRow,#curChips,#viewTabs{max-width:608px;margin-left:auto;margin-right:auto}
 #heroRow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 #tripName{
-  background:none;border:none;outline:none;color:var(--t3);
+  color:var(--t3);
   font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
-  width:100%;padding:2px 0;
+  width:100%;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-#tripName:focus{color:var(--blue)}
 #grandTotal{
   font-size:36px;font-weight:700;letter-spacing:-.03em;line-height:1.08;margin-top:4px;
   color:var(--t1);
@@ -607,7 +606,7 @@ select.f-input{
 <header id="hero">
   <div id="heroRow">
     <div style="flex:1;min-width:0">
-      <input id="tripName" value="欧洲之行" maxlength="20" aria-label="行程名称">
+      <div id="tripName">我的行程</div>
       <div id="grandTotal" class="num"><small>¥</small>0.00</div>
     </div>
     <div id="heroBtns">
@@ -981,7 +980,7 @@ select.f-input{
     <ul>
       <li>⚙️ 设置 → 我的行程 →「新增」。</li>
       <li>新行程是全新的空账本，数据完全独立。</li>
-      <li>点行程名即可切换。</li>
+      <li>点其他行程胶囊即可切换；点当前行程胶囊可改名（云端仅管理员）。</li>
     </ul>
     <h4>删除</h4>
     <div class="help-fig">
@@ -1083,7 +1082,7 @@ const CATS = [
 const catOf = k => CATS.find(c=>c.k===k) || CATS[7];
 
 let state = load() || {
-  tripName:'欧洲之行',
+  tripName:'我的行程',
   members:['我'],
   rates:{...DEFAULT_RATES},
   expenses:[]
@@ -1359,7 +1358,7 @@ const involves = (e, m) => e.createdBy === m || e.participants.includes(m);
 function renderAll(){ renderHero(); renderList(); renderSettle(); renderRates(); renderStats(); renderCloud(); }
 
 function renderHero(){
-  document.getElementById('tripName').value = state.tripName;
+  document.getElementById('tripName').textContent = state.tripName;
   // 个人开销页选中成员时，顶栏联动为该成员的数据（均摊口径，含已完成）
   const memberMode = currentView==='view-stats' && statTab!=='ALL' ? statTab : null;
   // 个人开销-全部：与环图同口径（公开全额，含已完成）；费用明细页：结算口径（不含已完成）
@@ -1931,8 +1930,8 @@ function renderCloud(){
   const roomsHtml = rooms.length
     ? `<div class="cloud-row"><span class="lab">我的行程</span>${rooms.map(r=>
         `<span class="room-chip">${r.code===cloud.room
-          ? `<button class="btn btn-primary" style="pointer-events:none">${esc(r.name||r.code)}</button>`
-          : `<button class="btn btn-ghost" data-sw="${esc(r.code)}">${esc(r.name||r.code)}</button>`}${tripDelMode?`<button class="room-del" data-del="${esc(r.code)}" data-name="${esc(r.name||r.code)}" title="删除行程">✕</button>`:''}</span>`
+          ? `<button class="btn btn-primary" data-rename="1" title="点击改名">${esc(r.name||r.code)}</button>`
+          : `<button class="btn btn-ghost" data-sw="${esc(r.code)}" title="点击切换">${esc(r.name||r.code)}</button>`}${tripDelMode?`<button class="room-del" data-del="${esc(r.code)}" data-name="${esc(r.name||r.code)}" title="删除行程">✕</button>`:''}</span>`
       ).join('')}<span style="flex:1"></span><button class="btn btn-primary btn-sm" id="tripAddBtn">新增</button><button class="btn btn-ghost btn-sm" id="tripDelBtn"${tripDelMode?' style="color:#D33;border-color:#F3C1BC"':''}>${tripDelMode?'完成':'删除'}</button></div>` : '';
   box.innerHTML = `
     <div class="cloud-row"><span class="lab">房间码</span><b>${cloud.room}</b>
@@ -1956,6 +1955,8 @@ function renderCloud(){
     location.reload();
   }));
   box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>delTripFlow(b.dataset.del, b.dataset.name)));
+  const rn = box.querySelector('[data-rename]');
+  if(rn) rn.addEventListener('click', renameTripFlow); // 当前行程胶囊：点击改名
   const ta = document.getElementById('tripAddBtn');
   if(ta) ta.addEventListener('click', newTripFlow);
   const td = document.getElementById('tripDelBtn');
@@ -2389,10 +2390,15 @@ document.getElementById('csvFile').addEventListener('change', async ev=>{
 });
 
 /* ================= 其他 ================= */
-document.getElementById('tripName').addEventListener('change', e=>{
-  state.tripName = e.target.value.trim() || '我的行程'; save(); renderHero();
+/* 账本名称：我的行程里点当前行程胶囊改名；云端房间仅管理员可改，改名随同步生效到所有成员 */
+async function renameTripFlow(){
+  if(inCloud() && !canAdmin()){ toast('仅管理员可修改账本名称'); return; }
+  const name = await askName('账本名称', state.tripName);
+  if(!name) return;
+  state.tripName = name;
+  save(); renderHero();
   if(cloud.room){ addRoom(cloud.room, state.tripName); renderCloud(); }
-});
+}
 
 document.getElementById('clearBtn').addEventListener('click',async ()=>{
   if(!await askConfirm({title:'清空全部数据？', msg:'将删除全部记录与成员，此操作不可恢复，建议先导出 CSV 备份。', okText:'清空'})) return;
