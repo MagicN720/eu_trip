@@ -70,7 +70,7 @@ body{
 }
 .cur-chip b{color:var(--t1);font-size:13px}
 #heroBtns{display:flex;gap:8px;flex:none}
-#settingsBtn,#fab{
+#settingsBtn,#fab,#helpBtn{
   flex:none;width:40px;height:40px;border-radius:13px;cursor:pointer;
   background:#EEF2FA;border:1px solid var(--stroke);
   font-size:17px;display:grid;place-items:center;
@@ -79,7 +79,40 @@ body{
   background:var(--grad);border:none;color:#fff;font-size:24px;font-weight:400;
   box-shadow:0 4px 14px rgba(46,107,255,.35),inset 0 1px 0 rgba(255,255,255,.3);
 }
-#settingsBtn:active,#fab:active{transform:scale(.92)}
+#settingsBtn:active,#fab:active,#helpBtn:active{transform:scale(.92)}
+#helpBtn{color:var(--t2)}
+
+/* ============ 帮助中心弹窗 ============ */
+#helpMask{
+  position:fixed;inset:0;z-index:70;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#helpMask.open{opacity:1;pointer-events:auto}
+#helpDlg{
+  position:fixed;left:50%;top:50%;z-index:71;
+  width:min(560px, calc(100vw - 32px));
+  max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border-radius:24px;background:#FBFCFE;border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.28);
+  padding:20px 20px calc(20px + var(--sab));
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.96);
+  transition:transform .32s cubic-bezier(.32,.72,.35,1),opacity .28s;
+}
+#helpDlg.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#helpTitle{display:flex;align-items:center;font-size:18px;font-weight:700;margin-bottom:6px}
+#helpX{margin-left:auto;width:32px;height:32px;border-radius:10px;border:1px solid var(--stroke);
+  background:#EEF2FA;color:var(--t2);font-size:14px;cursor:pointer}
+#helpBody h3{font-size:14px;font-weight:700;color:var(--t1);margin:18px 0 6px}
+#helpBody h3:first-child{margin-top:8px}
+#helpBody h4{font-size:13px;font-weight:700;color:var(--t1);margin:12px 0 4px}
+#helpBody p,#helpBody li{font-size:13px;color:var(--t2);line-height:1.75}
+#helpBody ul{padding-left:18px;margin:4px 0}
+#helpBody ol{padding-left:20px;margin:4px 0}
+#helpBody b{color:var(--t1)}
+.help-fig{margin:10px 0 2px}
+.help-fig svg{width:100%;height:auto;display:block}
+.help-cap{font-size:11px;color:var(--t3);text-align:center;margin:2px 0 6px}
 
 /* ============ 主区 ============ */
 main{position:relative;z-index:1;padding:4px 16px calc(40px + var(--sab));max-width:640px;margin:0 auto}
@@ -379,6 +412,8 @@ select.f-input{
 }
 .btn-ghost{background:#F4F6FB;border-color:var(--stroke);color:var(--t2)}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:9px}
+.rate-upd{margin-left:auto;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer}
+.rate-upd + .rate-upd{margin-left:14px}
 .btn-danger{background:#FDECEC;border-color:rgba(229,72,77,.25);color:var(--red)}
 
 /* 身份选择弹窗（居中，与名称/确认弹窗同风格） */
@@ -478,6 +513,7 @@ select.f-input{
 .donut-c{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;padding:0 14px;
+  pointer-events:none; /* 罩层不拦截点击，让扇区可以点选 */
 }
 .donut-c .t{font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
 .donut-c .l{font-size:10px;color:var(--t3);margin-top:3px}
@@ -532,6 +568,7 @@ select.f-input{
     </div>
     <div id="heroBtns">
       <button id="fab" aria-label="记一笔" title="记一笔">＋</button>
+      <button id="helpBtn" aria-label="帮助中心" title="帮助中心"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.5 2.3c-.8.35-1.1.9-1.1 1.8"/><circle cx="12" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg></button>
       <button id="settingsBtn" aria-label="设置" title="设置">⚙️</button>
     </div>
   </div>
@@ -694,6 +731,259 @@ select.f-input{
   </div>
 </div>
 
+<!-- 帮助中心 -->
+<div id="helpMask"></div>
+<div id="helpDlg" role="dialog" aria-modal="true">
+  <div id="helpTitle">帮助中心<button id="helpX">✕</button></div>
+  <div id="helpBody">
+    <h3>🚀 快速开始</h3>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 78">
+        <rect x="1" y="1" width="318" height="76" rx="16" fill="#fff" stroke="#E3E9F5"/>
+        <rect x="16" y="14" width="70" height="10" rx="5" fill="#C7D2E8"/>
+        <text x="16" y="56" font-size="22" font-weight="800" fill="#17233F">¥20,394.70</text>
+        <rect x="218" y="19" width="40" height="40" rx="13" fill="#2E6BFF"/>
+        <text x="238" y="47" font-size="22" fill="#fff" text-anchor="middle">＋</text>
+        <rect x="266" y="19" width="40" height="40" rx="13" fill="#EEF2FA" stroke="#E3E9F5"/>
+        <text x="286" y="45" font-size="15" text-anchor="middle">⚙️</text>
+        <circle cx="238" cy="39" r="26" fill="none" stroke="#FF6B3D" stroke-width="2" stroke-dasharray="4 3"/>
+      </svg>
+      <div class="help-cap">点右上角 ＋ 打开记账表单</div>
+    </div>
+    <ol>
+      <li>打开 ⚙️ 设置，添加同行成员。</li>
+      <li>点右上角 <b>＋</b> 记一笔。</li>
+      <li>先选付款人。</li>
+      <li>再选公开或私密。</li>
+      <li>然后勾选费用参与人。</li>
+      <li>填写金额、币种、分类和时间。</li>
+      <li>保存，完成。</li>
+    </ol>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 64">
+        <g font-size="10.5" text-anchor="middle">
+          <rect x="4" y="14" width="66" height="34" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="37" y="35" fill="#17233F">① 付款人</text>
+          <rect x="86" y="14" width="66" height="34" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="119" y="35" fill="#17233F">② 可见性</text>
+          <rect x="168" y="14" width="66" height="34" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="201" y="35" fill="#17233F">③ 参与人</text>
+          <rect x="250" y="14" width="66" height="34" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="283" y="35" fill="#17233F">④ 金额分类</text>
+        </g>
+        <g font-size="12" fill="#8A97B1" text-anchor="middle">
+          <text x="78" y="38">→</text><text x="160" y="38">→</text><text x="242" y="38">→</text>
+        </g>
+      </svg>
+      <div class="help-cap">记账表单顺序：付款人 → 可见性 → 参与人 → 金额分类</div>
+    </div>
+    <p>顶部两个大页签：<b>个人开销</b> 看每个人花了多少；<b>费用明细</b> 看全部账单和结算方案。</p>
+
+    <h3>🔒 公开与私密账单</h3>
+    <h4>公开账单</h4>
+    <ul>
+      <li>所有人可见。</li>
+      <li>参与人均摊。</li>
+      <li>计入结算。</li>
+    </ul>
+    <h4>私密账单</h4>
+    <ul>
+      <li>仅创建人和被选参与人可见。</li>
+      <li>不参与均摊与结算，视为自付。</li>
+      <li>不参与结算，因此没有「完成」标记。</li>
+      <li>计入个人开销统计。</li>
+      <li>列表中以淡紫色底显示。</li>
+      <li>选私密时，参与人默认只有自己。</li>
+    </ul>
+
+    <h3>📊 个人开销页</h3>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 158">
+        <g font-size="11" text-anchor="middle">
+          <rect x="8" y="10" width="52" height="26" rx="13" fill="#2E6BFF"/>
+          <text x="34" y="27" fill="#fff">全部</text>
+          <rect x="68" y="10" width="44" height="26" rx="13" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="90" y="27" fill="#5A6B8C">我</text>
+          <rect x="120" y="10" width="52" height="26" rx="13" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="146" y="27" fill="#5A6B8C">阿哲</text>
+          <rect x="180" y="10" width="52" height="26" rx="13" fill="#EEF2FA" stroke="#E3E9F5"/>
+          <text x="206" y="27" fill="#5A6B8C">小雨</text>
+        </g>
+        <circle cx="70" cy="100" r="30" fill="none" stroke="#EEF2FA" stroke-width="14"/>
+        <circle cx="70" cy="100" r="30" fill="none" stroke="#2E6BFF" stroke-width="14" stroke-dasharray="84.8 103.7" transform="rotate(-90 70 100)"/>
+        <circle cx="70" cy="100" r="30" fill="none" stroke="#22B07D" stroke-width="14" stroke-dasharray="56.5 132" stroke-dashoffset="-84.8" transform="rotate(-90 70 100)"/>
+        <circle cx="70" cy="100" r="30" fill="none" stroke="#FF9F43" stroke-width="14" stroke-dasharray="47.1 141.4" stroke-dashoffset="-141.3" transform="rotate(-90 70 100)"/>
+        <circle cx="70" cy="100" r="44" fill="none" stroke="#FF6B3D" stroke-width="2" stroke-dasharray="4 3"/>
+        <g font-size="11" fill="#17233F">
+          <circle cx="128" cy="78" r="4" fill="#2E6BFF"/><text x="140" y="82">酒店 ¥9,160</text>
+          <circle cx="128" cy="100" r="4" fill="#22B07D"/><text x="140" y="104">餐饮 ¥6,080</text>
+          <circle cx="128" cy="122" r="4" fill="#FF9F43"/><text x="140" y="126">门票 ¥4,340</text>
+        </g>
+        <g font-size="11">
+          <text x="16" y="152" fill="#2E6BFF" font-weight="700">全部</text>
+          <rect x="14" y="155" width="24" height="2" rx="1" fill="#2E6BFF"/>
+          <text x="56" y="152" fill="#8A97B1">🌍 公开</text>
+          <text x="116" y="152" fill="#8A97B1">🔒 私密</text>
+        </g>
+      </svg>
+      <div class="help-cap">点扇区或图例筛选分类；下方页签筛选公开/私密</div>
+    </div>
+    <h4>成员页签</h4>
+    <ul>
+      <li>顶部胶囊页签切换成员。</li>
+      <li>「全部」：全员公开账单，按全额统计。</li>
+      <li>成员页：该成员作为付款人或参与人的账单，按份额统计。</li>
+    </ul>
+    <h4>图表联动</h4>
+    <ul>
+      <li>点环形图扇区或图例，只看某一分类。</li>
+      <li>再点一次取消筛选。</li>
+      <li>图表下方的「全部 / 公开 / 私密」页签快速筛选账单类型。</li>
+    </ul>
+    <h4>金额口径</h4>
+    <ul>
+      <li>成员页右侧金额是该成员的份额。</li>
+      <li>同时显示原币金额和人民币折算。</li>
+      <li>全部页右侧金额是账单全额。</li>
+    </ul>
+
+    <h3>💸 费用明细与结算</h3>
+    <ul>
+      <li>账单按付款时间倒序排列。</li>
+      <li>多选账单可「标为完成」，已结清的账不再参与结算。</li>
+      <li><b>点对点明细</b>：每两个人之间的净欠款。</li>
+      <li><b>最短转账路径</b>：用最少转账次数结清所有人的方案。</li>
+      <li>以上两项都不含私密账单和已完成账单。</li>
+    </ul>
+
+    <h3>💱 汇率</h3>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 104">
+        <rect x="1" y="1" width="318" height="102" rx="16" fill="#fff" stroke="#E3E9F5"/>
+        <text x="16" y="28" font-size="11" fill="#17233F">欧元</text>
+        <rect x="200" y="12" width="104" height="24" rx="8" fill="#fff" stroke="#E3E9F5"/>
+        <text x="296" y="28" font-size="11" fill="#17233F" text-anchor="end">8.0123</text>
+        <text x="16" y="54" font-size="11" fill="#17233F">瑞士法郎</text>
+        <rect x="200" y="38" width="104" height="24" rx="8" fill="#fff" stroke="#E3E9F5"/>
+        <text x="296" y="54" font-size="11" fill="#17233F" text-anchor="end">8.9234</text>
+        <text x="16" y="84" font-size="9" fill="#8A97B1">每日自动更新（T+1） 上次更新 2026-08-20</text>
+        <text x="248" y="85" font-size="10" font-weight="600" fill="#2E6BFF" text-anchor="middle">诊断</text>
+        <text x="294" y="85" font-size="10" font-weight="600" fill="#2E6BFF" text-anchor="middle">立即更新</text>
+        <rect x="222" y="68" width="94" height="26" rx="13" fill="none" stroke="#FF6B3D" stroke-width="2" stroke-dasharray="4 3"/>
+      </svg>
+      <div class="help-cap">更新失败时先点「诊断」测试网络连通性</div>
+    </div>
+    <ul>
+      <li>每天首次打开 App 自动联网更新一次。</li>
+      <li>数据源每日 T+1 发布：今天拿到的是前一交易日的汇率。</li>
+      <li>外币一律按<b>付款当天</b>的汇率折算人民币。</li>
+      <li>没有当天快照时，用最近一天的汇率。</li>
+      <li>管理员可在 ⚙️ 设置-汇率里手动修改。</li>
+      <li>点汇率页脚的「<b>立即更新</b>」可强制刷新。</li>
+    </ul>
+
+    <h3>👥 多人共享</h3>
+    <h4>创建与加入</h4>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 110">
+        <rect x="1" y="1" width="318" height="108" rx="16" fill="#fff" stroke="#E3E9F5"/>
+        <text x="16" y="27" font-size="11" fill="#8A97B1">房间码</text>
+        <text x="80" y="27" font-size="11" font-weight="700" fill="#17233F">ABCD1234</text>
+        <rect x="152" y="15" width="44" height="18" rx="9" fill="#E7F0FF"/>
+        <text x="174" y="27" font-size="9" fill="#2E6BFF" text-anchor="middle">管理员</text>
+        <text x="16" y="51" font-size="11" fill="#8A97B1">邀请链接</text>
+        <text x="80" y="51" font-size="10" fill="#5A6B8C">https://…/#trip=ABCD1234</text>
+        <rect x="16" y="66" width="76" height="30" rx="10" fill="#2E6BFF"/>
+        <text x="54" y="85" font-size="11" fill="#fff" text-anchor="middle">复制链接</text>
+        <rect x="100" y="66" width="76" height="30" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+        <text x="138" y="85" font-size="11" fill="#5A6B8C" text-anchor="middle">管理密钥</text>
+        <rect x="184" y="66" width="76" height="30" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+        <text x="222" y="85" font-size="11" fill="#5A6B8C" text-anchor="middle">退出共享</text>
+        <rect x="10" y="60" width="88" height="42" rx="14" fill="none" stroke="#FF6B3D" stroke-width="2" stroke-dasharray="4 3"/>
+      </svg>
+      <div class="help-cap">创建房间后，把邀请链接发给同伴</div>
+    </div>
+    <ul>
+      <li>⚙️ 设置 →「开启共享 · 创建房间」。</li>
+      <li>把邀请链接发给同伴。</li>
+      <li>对方打开链接即加入，数据实时同步。</li>
+    </ul>
+    <h4>身份与权限</h4>
+    <ul>
+      <li>加入后先选择「我是谁」。</li>
+      <li>你记的账会标记创建人。</li>
+      <li>你只能修改自己的记录。</li>
+      <li>管理员可修改所有记录。</li>
+    </ul>
+    <h4>管理密钥</h4>
+    <ul>
+      <li>只保存在创建者的设备上。</li>
+      <li>换设备时凭它恢复管理员身份。</li>
+      <li><b>不要发到群里。</b></li>
+    </ul>
+
+    <h3>🗺️ 多行程</h3>
+    <h4>新增与切换</h4>
+    <ul>
+      <li>⚙️ 设置 → 我的行程 →「新增」。</li>
+      <li>新行程是全新的空账本，数据完全独立。</li>
+      <li>点行程名即可切换。</li>
+    </ul>
+    <h4>删除</h4>
+    <div class="help-fig">
+      <svg viewBox="0 0 320 64">
+        <text x="8" y="41" font-size="11" fill="#8A97B1">我的行程</text>
+        <rect x="64" y="22" width="76" height="30" rx="10" fill="#2E6BFF"/>
+        <text x="102" y="41" font-size="11" fill="#fff" text-anchor="middle">欧洲之行</text>
+        <rect x="148" y="22" width="76" height="30" rx="10" fill="#EEF2FA" stroke="#E3E9F5"/>
+        <text x="186" y="41" font-size="11" fill="#5A6B8C" text-anchor="middle">关西春游</text>
+        <circle cx="224" cy="22" r="8" fill="#fff" stroke="#E3E9F5"/>
+        <text x="224" y="25" font-size="9" fill="#8A97B1" text-anchor="middle">✕</text>
+        <circle cx="224" cy="22" r="13" fill="none" stroke="#FF6B3D" stroke-width="2" stroke-dasharray="4 3"/>
+        <rect x="236" y="22" width="38" height="30" rx="9" fill="#2E6BFF"/>
+        <text x="255" y="41" font-size="10" fill="#fff" text-anchor="middle">新增</text>
+        <rect x="280" y="22" width="38" height="30" rx="9" fill="#EEF2FA" stroke="#E3E9F5"/>
+        <text x="299" y="41" font-size="10" fill="#5A6B8C" text-anchor="middle">删除</text>
+      </svg>
+      <div class="help-cap">点「删除」后，每个行程右上角出现小叉</div>
+    </div>
+    <ul>
+      <li>点「删除」，每个行程右上角出现小叉。</li>
+      <li>管理员删除：连同云端数据一起删除，不可恢复。</li>
+      <li>普通成员删除：只是从本机移除。</li>
+    </ul>
+
+    <h3>🔗 把一个干净的账本发给朋友</h3>
+    <p>不需要你替他创建。</p>
+    <ol>
+      <li>复制<b>不带 #trip= 后缀</b>的首页链接。</li>
+      <li>把链接发给朋友。</li>
+      <li>他打开后是全新的单机账本。</li>
+      <li>他自己点「新建行程」，即创建属于他的房间。</li>
+    </ol>
+    <p>管理密钥只保存在他的设备上，你们的数据互不可见。注意不要把你自己设置页里的「邀请链接」发给他，那会加入你的账本。</p>
+
+    <h3>💾 数据管理</h3>
+    <p>都在 ⚙️ 设置底部。</p>
+    <ul>
+      <li><b>导出 CSV</b>：随时备份，Excel 可直接打开；你看不到的私密账单不会导出。</li>
+      <li><b>导入</b>：用之前导出的 CSV 整体替换当前数据，仅管理员可用。</li>
+      <li><b>载入示例</b>：一键填入演示数据体验功能。</li>
+      <li><b>清空</b>：删除全部数据，不可恢复。</li>
+    </ul>
+
+    <h3>❔ 常见问题</h3>
+    <h4>看不到自己刚记的私密账？</h4>
+    <p>先在设置里选好「我是谁」。私密账单只对创建人和参与人可见。</p>
+    <h4>汇率没更新？</h4>
+    <p>每天只自动更新一次。网络偶发失败时，第二天打开会重试，也可以点汇率页脚的「立即更新」。仍失败时点旁边的「诊断」，可分别测试汇率源和云同步接口的连通性。</p>
+    <h4>改完数据别人没同步？</h4>
+    <p>同步有不到 1 秒的防抖。对方页面在后台时暂停轮询，切回前台即会拉取最新数据。</p>
+    <h4>换手机了？</h4>
+    <p>用邀请链接重新加入房间并选择身份。需要管理员权限时，再输入管理密钥。</p>
+  </div>
+</div>
+
 <!-- 身份选择弹窗 -->
 <div id="idMask"></div>
 <div id="idDlg" role="dialog" aria-modal="true">
@@ -737,10 +1027,18 @@ let state = load() || {
   rates:{...DEFAULT_RATES},
   expenses:[]
 };
-// 老数据迁移：补齐新增币种的默认汇率
-state.rates = {...DEFAULT_RATES, ...(state.rates||{})};
-// 历史汇率快照：{ 'YYYY-MM-DD': {EUR:8.0,...} }，换算按付款日当天汇率
-state.rateHistory = state.rateHistory || {};
+// 老数据迁移：补齐新增币种的默认汇率、历史快照字段、旧私密账单参与人收缩
+function migrateState(){
+  state.rates = {...DEFAULT_RATES, ...(state.rates||{})};
+  // 历史汇率快照：{ 'YYYY-MM-DD': {EUR:8.0,...} }，换算按付款日当天汇率
+  state.rateHistory = state.rateHistory || {};
+  // 旧版私密账单的参与人默认是全选成员 → 新可见性规则下会全员可见，收缩为仅付款人
+  for(const e of (state.expenses||[])){
+    if(e.private && e.participants.length > 1 && state.members.every(m=>e.participants.includes(m)))
+      e.participants = [e.payer];
+  }
+}
+migrateState();
 let editingId = null;
 let form = { cur:'CNY', cat:'hotel', parts:new Set(), vis:'pub' };
 
@@ -844,13 +1142,43 @@ async function addMemberFlow(){
 /* ================= 云同步（Bmob REST） ================= */
 /* 汇率每日自动更新（open.er-api.com，免费无需密钥，T+1）
    接口返回 1 CNY = x 外币，取倒数存为 1 外币 = ? CNY */
-async function autoUpdateRates(){
+let rateErr = ''; // 最近一次汇率更新失败的原因（用于提示与诊断）
+
+/* 网络连通性诊断：分别探测汇率源与云同步接口，给出状态码与耗时 */
+async function netDiag(){
+  const lines = [`设备网络：${navigator.onLine ? '✅ 在线' : '❌ 离线（浏览器报告）'}`];
+  const probe = async (name, url, headers) => {
+    const t0 = performance.now();
+    const ctl = new AbortController();
+    const to = setTimeout(()=>ctl.abort(), 8000);
+    try{
+      const r = await fetch(url, {headers, signal:ctl.signal, cache:'no-store'});
+      clearTimeout(to);
+      lines.push(`${r.ok?'✅':'⚠️'} ${name}：HTTP ${r.status} · ${Math.round(performance.now()-t0)}ms`);
+    }catch(e){
+      clearTimeout(to);
+      lines.push(`❌ ${name}：${e.name==='AbortError' ? '超时（8s 无响应）' : (e.message||'连接失败')}`);
+    }
+  };
+  await probe('汇率源（er-api）', 'https://open.er-api.com/v6/latest/CNY');
+  await probe('云同步（Bmob）', BMOB_API + '?limit=1',
+    {'X-Bmob-Application-Id':BMOB_ID, 'X-Bmob-REST-API-Key':BMOB_KEY});
+  if(lines.some(l=>l.startsWith('❌ 汇率源')))
+    lines.push('建议：切换 Wi-Fi/蜂窝网络、关闭广告拦截或内容过滤插件、检查 VPN/代理分流规则后重试');
+  return lines;
+}
+
+async function autoUpdateRates(force=false){
   const today = dayStr();
-  if(state.ratesUpdated === today) return;
+  if(!force && state.ratesUpdated === today) return;
   try{
-    const r = await fetch('https://open.er-api.com/v6/latest/CNY');
+    const ctl = new AbortController();
+    const to = setTimeout(()=>ctl.abort(), 10000); // 10s 超时，避免无限转圈
+    const r = await fetch('https://open.er-api.com/v6/latest/CNY', {signal:ctl.signal});
+    clearTimeout(to);
+    if(!r.ok) throw new Error('HTTP '+r.status);
     const j = await r.json();
-    if(j.result!=='success' || !j.rates) return;
+    if(j.result!=='success' || !j.rates) throw new Error('接口返回异常');
     let changed = false;
     for(const c of Object.keys(CURS)){
       if(c==='CNY' || !j.rates[c]) continue;
@@ -858,9 +1186,10 @@ async function autoUpdateRates(){
       if(Math.abs((state.rates[c]||0)-v) > 1e-9){ state.rates[c]=v; changed=true; }
     }
     snapRates(today); // 留存今日快照，供按付款日换算
+    rateErr = '';
     if(changed){ state.ratesUpdated = today; save(); renderRates(); renderHero(); setSync('汇率已更新 '+today); }
     else { state.ratesUpdated = today; save(); }
-  }catch(e){ /* 离线则用旧汇率 */ }
+  }catch(e){ rateErr = e.name==='AbortError' ? '请求超时（10s）' : (e.message || '网络异常'); /* 离线则用旧汇率 */ }
 }
 const BMOB_ID  = '11d5b5f37aca393e6605dc866d581f64';
 const BMOB_KEY = '05de8f67ed35926c654373f1aeb20326';
@@ -908,6 +1237,7 @@ function applyRemote(row){
   try{
     const remote = JSON.parse(row.data);
     state = remote; cloud.v = row.v; cloud.objectId = row.objectId;
+    migrateState(); // 云端数据同样跑一次迁移
     saveLocal(); renderAll();
   }catch(e){}
 }
@@ -1019,7 +1349,7 @@ function renderList(){
       <div class="exp-ico">${c.i}</div>
       <div class="exp-mid">
         <div class="exp-title">${esc(e.title)}</div>
-        <div class="exp-sub">${esc(e.payer)} 付 · ${e.participants.map(esc).join('、')} 均摊 · ${ds}${e.done?' · ✅已完成':''}${e.private?' · 私密':''}</div>
+        <div class="exp-sub">${esc(e.payer)} 付，${e.participants.map(esc).join('、')}均摊 · ${ds}${e.done?' · ✅已完成':''}${e.private?' · 私密':''}</div>
       </div>
       <div class="exp-amt num">
         <div class="a">${CURS[e.currency].sym}${fmt(e.amount)}</div>
@@ -1031,6 +1361,8 @@ function renderList(){
     el.addEventListener('click', ()=>{
       if(selecting){
         const id = el.dataset.id;
+        const rec = state.expenses.find(x=>x.id===id);
+        if(rec && rec.private){ toast('私密账单不参与结算，无需标记完成'); return; }
         selected.has(id) ? selected.delete(id) : selected.add(id);
         el.classList.toggle('sel', selected.has(id));
         updateSelBar();
@@ -1235,8 +1567,23 @@ function renderRates(){
       <input class="num" type="number" inputmode="decimal" step="0.0001" min="0" value="${state.rates[c]}" data-c="${c}" ${ro?'readonly tabindex="-1"':''}>
     </div>`).join('');
   document.getElementById('rateBox').innerHTML = rows +
-    `<div class="rate-row"><span class="lab" style="font-weight:400;color:var(--t3);font-size:12px">每日自动更新（T+1）<span style="margin-left:6px">${state.ratesUpdated ? '上次更新 '+state.ratesUpdated : '尚未更新'}</span></span></div>`;
+    `<div class="rate-row"><span class="lab" style="font-weight:400;color:var(--t3);font-size:12px">每日自动更新（T+1）<span style="margin-left:6px">${state.ratesUpdated ? '上次更新 '+state.ratesUpdated : '尚未更新'}</span></span><span class="rate-upd" id="rateDiag">诊断</span>${ro?'':'<span class="rate-upd" id="rateUpd">立即更新</span>'}</div>` +
+    `<div id="netDiagBox" style="display:none;padding:6px 2px 2px;font-size:12px;color:var(--t2);line-height:1.9"></div>`;
+  document.getElementById('rateDiag').addEventListener('click', async ()=>{
+    const box = document.getElementById('netDiagBox');
+    box.style.display = '';
+    box.textContent = '诊断中…';
+    const lines = await netDiag();
+    box.innerHTML = lines.map(l=>`<div>${esc(l)}</div>`).join('');
+  });
   if(ro) return;
+  document.getElementById('rateUpd').addEventListener('click', async ()=>{
+    const btn = document.getElementById('rateUpd');
+    btn.textContent = '更新中…';
+    await autoUpdateRates(true); // 强制刷新，绕过每日一次的去重
+    renderRates();
+    toast(state.ratesUpdated === dayStr() ? '汇率已刷新' : `更新失败：${rateErr||'网络异常'}，可点「诊断」排查`);
+  });
   document.getElementById('rateBox').querySelectorAll('input').forEach(inp=>
     inp.addEventListener('change',()=>{
       const v = parseFloat(inp.value);
@@ -1266,7 +1613,7 @@ function memberStats(m){
       if(e.private) continue;   // 全部 tab 只统计公开账单
       total += v; byCat[e.cat] = (byCat[e.cat]||0) + v;
       rows.push({e, amt:v, orig:e.amount, pri:false,
-        sub:`${esc(e.payer)} 付 · ${e.participants.map(esc).join('、')} 均摊`});
+        sub:`${esc(e.payer)} 付，${e.participants.map(esc).join('、')}均摊`});
     } else {
       if(!involves(e, m)) continue; // 只统计该成员创建或参与的
       if(e.payer === m) paid += v;
@@ -1275,7 +1622,7 @@ function memberStats(m){
       total += s; byCat[e.cat] = (byCat[e.cat]||0) + s;
       rows.push({e, amt:s, orig:share, pri:!!e.private,
         sub:(e.private ? '私密 · ' : '')
-          + (e.payer===m ? '自己付款，含他人均摊' : `${esc(e.payer)} 付，自己均摊一份`)});
+          + `${esc(e.payer)} 付，${e.participants.map(esc).join('、')}均摊`});
     }
   }
   return {rows, byCat, total, paid};
@@ -1583,6 +1930,14 @@ settingsBtn.addEventListener('click',()=>{
   showView(inData ? currentView : 'view-data');
   if(inData){ renderHero(); renderStats(); } // 从设置返回时刷新联动数据
 });
+
+/* 帮助中心 */
+const helpMask = document.getElementById('helpMask');
+const helpDlg  = document.getElementById('helpDlg');
+const closeHelp = ()=>{ helpMask.classList.remove('open'); helpDlg.classList.remove('open'); };
+document.getElementById('helpBtn').addEventListener('click',()=>{ helpMask.classList.add('open'); helpDlg.classList.add('open'); });
+helpMask.addEventListener('click', closeHelp);
+document.getElementById('helpX').addEventListener('click', closeHelp);
 
 /* ================= 记账 Sheet ================= */
 const sheet = document.getElementById('sheet'), mask = document.getElementById('sheetMask');
