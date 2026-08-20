@@ -103,6 +103,36 @@ body{
 #helpTitle{display:flex;align-items:center;font-size:18px;font-weight:700;margin-bottom:6px}
 #helpX{margin-left:auto;width:32px;height:32px;border-radius:10px;border:1px solid var(--stroke);
   background:#EEF2FA;color:var(--t2);font-size:14px;cursor:pointer}
+
+/* ============ 记录详情弹窗（个人开销页只读） ============ */
+#recMask{
+  position:fixed;inset:0;z-index:56;background:rgba(20,30,55,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#recMask.open{opacity:1;pointer-events:auto}
+#recDlg{
+  position:fixed;left:50%;top:50%;z-index:57;
+  width:min(440px, calc(100vw - 32px));
+  max-height:84dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border-radius:24px;background:#FBFCFE;border:1px solid var(--stroke);
+  box-shadow:0 24px 64px rgba(18,32,64,.28);
+  padding:20px 20px calc(20px + var(--sab));
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,-47%) scale(.96);
+  transition:transform .32s cubic-bezier(.32,.72,.35,1),opacity .28s;
+}
+#recDlg.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#recHead{display:flex;align-items:center;font-size:17px;font-weight:700;margin-bottom:4px}
+#recX{margin-left:auto;width:32px;height:32px;border-radius:10px;border:1px solid var(--stroke);
+  background:#EEF2FA;color:var(--t2);font-size:14px;cursor:pointer;flex:none}
+.rec-amt{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+.rec-amt small{font-size:16px}
+.rec-amt-sub{font-size:12px;color:var(--t3);margin:2px 0 4px}
+.rec-mine{font-size:13px;color:var(--t1);background:#EDF3FF;border-radius:10px;padding:8px 12px;margin:10px 0 2px}
+.rec-row{display:flex;gap:12px;padding:9px 2px;font-size:13px;border-bottom:1px dashed var(--stroke)}
+.rec-row:last-child{border-bottom:none}
+.rec-row .k{flex:none;width:64px;color:var(--t3)}
+.rec-row .v{flex:1;color:var(--t1);word-break:break-all;line-height:1.6}
 #helpBody h3{font-size:14px;font-weight:700;color:var(--t1);margin:18px 0 6px}
 #helpBody h3:first-child{margin-top:8px}
 #helpBody h4{font-size:13px;font-weight:700;color:var(--t1);margin:12px 0 4px}
@@ -540,6 +570,7 @@ select.f-input{
 .srow .sa .a{font-size:15px;font-weight:700}
 .srow .sa .c{font-size:11px;color:var(--t3);margin-top:2px}
 .srow.done{opacity:.48}
+.srow{cursor:pointer}
 .srow.done .sa .a{text-decoration:line-through}
 .stat-sub{font-size:11px;color:var(--t3);margin-top:8px;text-align:center}
 /* 小屏手机：缩小圆环与图例字号，防止图例换行 */
@@ -845,6 +876,7 @@ select.f-input{
       <li>成员页右侧金额是该成员的份额。</li>
       <li>同时显示原币金额和人民币折算。</li>
       <li>全部页右侧金额是账单全额。</li>
+      <li>点任意一条记录，弹窗查看完整详情（金额、汇率、参与人、份额、可见性）。</li>
     </ul>
 
     <h3>💸 费用明细与结算</h3>
@@ -982,6 +1014,13 @@ select.f-input{
     <h4>换手机了？</h4>
     <p>用邀请链接重新加入房间并选择身份。需要管理员权限时，再输入管理密钥。</p>
   </div>
+</div>
+
+<!-- 记录详情弹窗（只读） -->
+<div id="recMask"></div>
+<div id="recDlg" role="dialog" aria-modal="true">
+  <div id="recHead"><span id="recTitle"></span><button id="recX">✕</button></div>
+  <div id="recBody"></div>
 </div>
 
 <!-- 身份选择弹窗 -->
@@ -1732,10 +1771,48 @@ function renderStats(){
         </div>
       </div>`;
     }).join('');
-    // 个人开销条目只读（编辑请去费用明细页，避免两处入口造成误解）
+    // 个人开销条目只读：点击弹出详情（小屏描述截断时看全）；编辑请去费用明细页
+    box.querySelectorAll('.srow').forEach(el=>
+      el.addEventListener('click',()=>openRecDetail(el.dataset.id)));
     const fx = document.getElementById('statFilterX');
     if(fx) fx.addEventListener('click',()=>{ statCat=null; renderStats(); });
   }
+}
+
+/* 记录详情弹窗：完整展示金额、汇率、参与人、份额、可见性等，避免小屏截断 */
+function openRecDetail(id){
+  const e = state.expenses.find(x=>x.id===id);
+  if(!e) return;
+  const c = catOf(e.cat);
+  const v = effCny(e);
+  const n = e.participants.length || 1;
+  const d = new Date(e.time);
+  const pad = x=>String(x).padStart(2,'0');
+  const ds = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const orig = x=>`${CURS[e.currency].sym}${fmt(r2(x))}`;
+  const withCny = x=> e.currency==='CNY' ? orig(x) : `${orig(x)} ≈ ¥${fmt(r2(x*rateFor(e.currency,e.time)))}`;
+  const rows = [
+    ['分类',   `${c.i} ${c.n}`],
+    ['付款时间', ds],
+    ['付款人',  e.payer],
+    ['参与人',  `${e.participants.join('、')}（${n} 人）`],
+    ['每人份额', withCny(e.amount/n)],
+    ...(e.currency==='CNY' ? [] : [['汇率', `1 ${e.currency} = ¥${rateFor(e.currency, e.time)}（付款日 ${e.time.slice(0,10)}）`]]),
+    ['可见性',  e.private ? '🔒 私密 · 仅创建人与参与人可见，不参与结算' : '🌍 公开'],
+    ['状态',    e.done ? '✅ 已完成（不参与结算）' : '进行中'],
+    ...(e.createdBy ? [['创建人', e.createdBy]] : []),
+    ...(e.note ? [['备注', e.note]] : []),
+  ];
+  // 成员页签下，顶部额外标出该成员的份额
+  const mine = statTab!=='ALL' && involves(e, statTab)
+    ? `<div class="rec-mine">${esc(statTab)} 的份额：<b class="num">¥${fmt(r2(v/n))}</b>${e.currency==='CNY' ? '' : `（${orig(e.amount/n)}）`}</div>` : '';
+  document.getElementById('recBody').innerHTML =
+    `<div class="rec-amt num"><small>¥</small>${fmt(r2(v))}</div>
+     <div class="rec-amt-sub">${orig(e.amount)} ${CURS[e.currency].name}</div>`
+    + mine
+    + rows.map(([k,val])=>`<div class="rec-row"><span class="k">${k}</span><span class="v">${esc(String(val))}</span></div>`).join('');
+  document.getElementById('recTitle').textContent = `${c.i} ${e.title}`;
+  recMask.classList.add('open'); recDlg.classList.add('open');
 }
 
 /* 本机行程列表（用于多行程切换） */
@@ -1938,6 +2015,13 @@ const closeHelp = ()=>{ helpMask.classList.remove('open'); helpDlg.classList.rem
 document.getElementById('helpBtn').addEventListener('click',()=>{ helpMask.classList.add('open'); helpDlg.classList.add('open'); });
 helpMask.addEventListener('click', closeHelp);
 document.getElementById('helpX').addEventListener('click', closeHelp);
+
+/* 记录详情弹窗 */
+const recMask = document.getElementById('recMask');
+const recDlg  = document.getElementById('recDlg');
+const closeRec = ()=>{ recMask.classList.remove('open'); recDlg.classList.remove('open'); };
+recMask.addEventListener('click', closeRec);
+document.getElementById('recX').addEventListener('click', closeRec);
 
 /* ================= 记账 Sheet ================= */
 const sheet = document.getElementById('sheet'), mask = document.getElementById('sheetMask');
